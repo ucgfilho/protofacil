@@ -2,8 +2,6 @@
 
 Ferramenta de prototipagem acessível para codesigners idosos (60+ anos).
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
 ## Objetivo
 
 ProtoFácil é uma aplicação web de prototipagem diseñada especificamente para pessoas idosas que atuam como codesigners. A ferramenta atende às necessidades de acessibilidade sensoriais, cognitivas e motoras desse público-alvo.
@@ -116,4 +114,4 @@ Este é um projeto acadêmico (TCC UESB 2025). Para contribuições, por favor, 
 
 ## Licença
 
-MIT License - veja LICENSE para detalhes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
