@@ -1,0 +1,19 @@
+{
+  "name": "protofacil",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd apps/api && npm run start:dev",
+    "dev:frontend": "cd apps/web && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd apps/api && npm run build",
+    "build:frontend": "cd apps/web && npm run build",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd apps/api && npm run lint",
+    "lint:frontend": "cd apps/web && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 23, 23, 23;
+  --background-rgb: 255, 255, 255;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+}
+
+.btn-accessible {
+  @apply px-6 py-3 text-lg font-medium rounded-lg transition-colors duration-200;
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.input-accessible {
+  @apply w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg transition-colors;
+  min-height: 48px;
+}
+
+.input-accessible:focus {
+  @apply border-primary-500 outline-none ring-2 ring-primary-200;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+}
