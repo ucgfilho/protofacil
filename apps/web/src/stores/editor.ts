@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 
 export interface CanvasElement {
   id: string;
-  type: 'rect' | 'circle' | 'text' | 'line';
+  type: 'rect' | 'circle' | 'triangle' | 'star' | 'heart' | 'line' | 'text' | 'image' | 'table' | 'checkbox';
   x: number;
   y: number;
   width?: number;
@@ -19,6 +19,15 @@ export interface CanvasElement {
   rotation?: number;
   scaleX?: number;
   scaleY?: number;
+  opacity?: number;
+  visible?: boolean;
+  checked?: boolean;
+  label?: string;
+  rows?: number;
+  cols?: number;
+  numPoints?: number;
+  innerRadius?: number;
+  outerRadius?: number;
 }
 
 interface Collaborator {

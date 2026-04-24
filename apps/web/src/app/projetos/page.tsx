@@ -22,6 +22,7 @@ export default function ProjectsPage() {
   const [newProjectName, setNewProjectName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -36,8 +37,9 @@ export default function ProjectsPage() {
     try {
       const data = await api.get<Project[]>('/projects');
       setProjects(data);
-    } catch (err) {
-      console.error('Erro ao carregar projetos');
+    } catch (err: any) {
+      console.error('Erro ao carregar projetos', err);
+      setError(err.message || 'Erro ao carregar projetos');
     } finally {
       setIsLoading(false);
     }
@@ -48,13 +50,15 @@ export default function ProjectsPage() {
     if (!newProjectName.trim()) return;
 
     try {
+      setError('');
       const project = await api.post<Project>('/projects', { name: newProjectName });
       setProjects([project, ...projects]);
       setNewProjectName('');
       setIsOpen(false);
       router.push(`/projeto/${project.id}`);
-    } catch (err) {
-      console.error('Erro ao criar projeto');
+    } catch (err: any) {
+      console.error('Erro ao criar projeto', err);
+      setError(err.message || 'Erro ao criar projeto');
     }
   };
 
@@ -114,6 +118,11 @@ export default function ProjectsPage() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateProject} className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
                 <Input
                   label="Nome do projeto"
                   value={newProjectName}

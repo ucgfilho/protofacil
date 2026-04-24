@@ -1,6 +1,6 @@
 # ProtoFácil
 
-Ferramenta de prototipagem acessível para codesigners idosos (60+ anos).
+Ferramenta de prototipagem acessível para codesigners idosos.
 
 ## Objetivo
 
@@ -20,97 +20,127 @@ ProtoFácil é uma aplicação web de prototipagem diseñada especificamente par
 
 ### Frontend
 - Next.js 14 (App Router)
-- ReactKonva (canvas)
+- React Konva (canvas)
 - Tailwind CSS
 - Zustand (state management)
+- Socket.IO (colaboração em tempo real)
+- Yjs (sincronização)
 
 ### Backend
-- Fastify
+- NestJS
 - Prisma + PostgreSQL
+- Socket.IO
+- JWT (autenticação)
 
-### Infra
-- TypeScript strict
-- ESLint + jsx-a11y
+### Tools
+- TypeScript
+- ESLint
 
-##Setup
+## Instalação
 
 ### Pré-requisitos
 - Node.js 20+
 - PostgreSQL 14+
 
-### Instalação
+### Passo 1: Clone e instale dependências
 
-1. Clone o repositório:
 ```bash
+git clone https://github.com/protofacil/protofacil.git
 cd protofacil
-```
-
-2. Instale as dependências:
-```bash
 npm install
 ```
 
-3.Configure as variáveis de ambiente:
+### Passo 2: Configure o banco de dados
+
+1. Inicie o PostgreSQL:
 ```bash
-cp apps/api/.env.example apps/api/.env
-# Edite o arquivo com suas configurações
+# Linux
+sudo service postgresql start
+
+# ou Docker
+docker start postgres
 ```
 
-4.Execute as migrações do banco de dados:
+2. Crie o usuário e banco de dados:
 ```bash
-cd apps/api
-npm run db:push
+sudo -u postgres psql
 ```
 
-5.Inicie o servidor de desenvolvimento:
-```bash
-# Terminal 1 - Backend
-cd apps/api
-npm run dev
+No prompt do psql, execute:
+```sql
+CREATE USER "protouser" WITH PASSWORD '123123';
+CREATE DATABASE protofacil OWNER "protouser";
+GRANT ALL PRIVILEGES ON DATABASE protofacil TO "protouser";
+\q
+```
 
-# Terminal 2 - Frontend
+3. Configure as variáveis de ambiente:
+```bash
+cd apps/api
+# Edite o arquivo .env com as configurações
+```
+
+### Passo 3: Sincronize o banco de dados
+
+```bash
+cd apps/api
+npm run prisma:push
+```
+
+### Passo 4: Execute as migrações de permissões
+
+```bash
+sudo -u postgres psql -d protofacil -c 'GRANT ALL ON SCHEMA public TO "protouser"; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "protouser"; GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "protouser";'
+```
+
+### Passo 5: Inicie os servidores
+
+```bash
+# Terminal 1 - Backend (porta 4000)
+cd apps/api
+npm run start:dev
+
+# Terminal 2 - Frontend (porta 3000)
 cd apps/web
 npm run dev
 ```
 
-Acesse http://localhost:3000
+Acesse:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:4000
+- Documentação: http://localhost:4000/api/docs
 
 ## Estrutura do Projeto
 
 ```
-/apps/web          # Frontend Next.js
-/apps/api         # Backend Fastify
-/packages/ui      # Design system
-/packages/shared  # Types e constantes
-/packages/canvas  # Lógica do editor
+/apps/web          # Frontend Next.js (porta 3000)
+/apps/api         # Backend NestJS (porta 4000)
 ```
 
-## Design System
+## Componentes Disponíveis
 
-O projeto inclui um design system acessível com os seguintes componentes:
+O projeto inclui componentes acessívels:
 
-- Button (botões acessíveis com mínima 48x48px)
-- Input (com label, helper text, error state)
-- Modal (focus trap, aria-modal)
-- Toast (aria-live para notificações)
-- Tooltip (delay 300ms)
-- Slider (com input numérico alternativo)
-- ColorPicker (com input hexadecimal)
-- Toolbar (navegação por arrow keys)
+- **Button**: Botões com tamanho mínimo 48x48px
+- **Input**: Campos com label e estados de erro
+- **Dialog**: Modais com focus trap
+- **Toast**: Notificações com aria-live
+- **Tooltip**: tooltips com delay 300ms
 
 Todos os componentes seguem as diretrizes WCAG 2.1 nível AA.
 
 ## Critérios de Acessibilidade
 
 - Tamanho de fonte mínimo: 18px para labels
-- Área de clique/toque mínima: 44x44px (WCAG 2.5.5)
-- Contraste mínimo: 4.5:1 para texto normal
-- Focus visible: outline de 3px mínimo
+- Área de clique: mínimo 44px (WCAG 2.5.5)
+- Contraste mínimo: 4.5:1 para texto
+- Focus visible: outline de 3px
 - Suporte a prefers-reduced-motion
+- Navegação por teclado completa
 
 ## Contribuição
 
-Este é um projeto acadêmico (TCC UESB 2025). Para contribuições, por favor, abra uma issue primeiro.
+Projeto acadêmico (TCC UESB 2025/2026). Para contribuições, abra uma issue primeiro.
 
 ## Licença
 
