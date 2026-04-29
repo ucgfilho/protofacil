@@ -20,6 +20,11 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Keep token in sync even when login/register updates localStorage directly.
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('token');
+    }
+
     const reqHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
