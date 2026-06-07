@@ -10,6 +10,7 @@ const props = defineProps<{
     success?: string;
     error?: string;
   };
+  wide?: boolean;
 }>();
 
 const fontScale = computed(() => props.preferences?.fontScale ?? 'large');
@@ -43,7 +44,12 @@ const contrast = computed(() => props.preferences?.contrastMode ?? 'default');
       </div>
     </header>
 
-    <main id="conteudo" class="mx-auto grid max-w-6xl gap-6 px-6 py-8" tabindex="-1">
+    <main
+      id="conteudo"
+      class="mx-auto grid w-full"
+      :class="wide ? 'max-w-none gap-0 px-0 py-4' : 'max-w-6xl gap-6 px-6 py-8'"
+      tabindex="-1"
+    >
       <BaseToast v-if="flash.success" :message="flash.success" tone="success" />
       <BaseToast v-if="flash.error" :message="flash.error" tone="error" />
       <slot />

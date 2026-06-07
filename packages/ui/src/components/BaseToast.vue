@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import BaseIcon from './BaseIcon.vue';
 import type { IconName } from '../types/icon';
 
@@ -26,11 +26,45 @@ const iconName = computed<IconName>(() => {
 
   return 'info';
 });
+
+const isVisible = ref(Boolean(props.message));
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearCloseTimer = (): void => {
+  if (closeTimer) {
+    clearTimeout(closeTimer);
+    closeTimer = null;
+  }
+};
+
+const closeToast = (): void => {
+  clearCloseTimer();
+  isVisible.value = false;
+};
+
+const scheduleClose = (): void => {
+  clearCloseTimer();
+
+  if (props.message) {
+    closeTimer = setTimeout(closeToast, 10000);
+  }
+};
+
+watch(
+  () => props.message,
+  (message) => {
+    isVisible.value = Boolean(message);
+    scheduleClose();
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(clearCloseTimer);
 </script>
 
 <template>
-  <p
-    v-if="message"
+  <div
+    v-if="message && isVisible"
     role="status"
     aria-live="polite"
     :data-testid="testid"
@@ -42,6 +76,14 @@ const iconName = computed<IconName>(() => {
     }"
   >
     <BaseIcon :name="iconName" size="lg" />
-    <span>{{ message }}</span>
-  </p>
+    <span class="min-w-0 flex-1">{{ message }}</span>
+    <button
+      type="button"
+      class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
+      aria-label="Fechar aviso"
+      @click="closeToast"
+    >
+      <BaseIcon name="x" size="md" />
+    </button>
+  </div>
 </template>

@@ -13,7 +13,7 @@
     "@inertiajs/vue3": "^2.0.0",
     "@protofacil/shared": "0.1.0",
     "@protofacil/ui": "0.1.0",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^4.5.2",
     "pinia": "^2.3.0",
     "vue": "^3.5.13"
   },

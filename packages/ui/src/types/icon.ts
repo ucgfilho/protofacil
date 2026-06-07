@@ -1,6 +1,7 @@
 export type IconName =
   | 'accessibility'
   | 'arrow-left'
+  | 'button'
   | 'check'
   | 'circle'
   | 'copy'
@@ -9,8 +10,10 @@ export type IconName =
   | 'folder'
   | 'home'
   | 'info'
+  | 'input'
   | 'key'
   | 'logout'
+  | 'mouse-pointer'
   | 'palette'
   | 'plus'
   | 'rectangle'
@@ -20,4 +23,5 @@ export type IconName =
   | 'text'
   | 'trash'
   | 'user'
-  | 'warning';
+  | 'warning'
+  | 'x';

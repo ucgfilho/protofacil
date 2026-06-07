@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/vue';
+import { fireEvent, render, screen } from '@testing-library/vue';
+import { nextTick } from 'vue';
 import BaseButton from '../components/BaseButton.vue';
 import BaseInput from '../components/BaseInput.vue';
 import BaseToast from '../components/BaseToast.vue';
@@ -29,5 +30,28 @@ describe('componentes acessíveis', () => {
   it('renderiza toast com aria-live', () => {
     render(BaseToast, { props: { message: 'Projeto criado com sucesso.', tone: 'success' } });
     expect(screen.getByRole('status').textContent).toContain('Projeto criado com sucesso.');
+    expect(screen.getByRole('button', { name: 'Fechar aviso' })).toBeTruthy();
+  });
+
+  it('fecha toast ao acionar o botão de fechar', async () => {
+    render(BaseToast, { props: { message: 'Projeto criado com sucesso.', tone: 'success' } });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso' }));
+
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('remove toast automaticamente depois de 10 segundos', async () => {
+    vi.useFakeTimers();
+
+    render(BaseToast, { props: { message: 'Projeto criado com sucesso.', tone: 'success' } });
+
+    expect(screen.getByRole('status')).toBeTruthy();
+
+    vi.advanceTimersByTime(10000);
+    await nextTick();
+
+    expect(screen.queryByRole('status')).toBeNull();
+    vi.useRealTimers();
   });
 });

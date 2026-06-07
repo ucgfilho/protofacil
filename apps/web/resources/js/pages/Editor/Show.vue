@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { BaseButton, BaseIcon, BaseInput } from '@protofacil/ui';
 import AppLayout from '../../layouts/AppLayout.vue';
 import type { AuthenticatedUser, UserPreferences } from '@protofacil/shared';
+import type { IconName } from '@protofacil/ui';
 
 type Tool = 'select' | 'rectangle' | 'circle' | 'text' | 'button' | 'input';
 type ElementType = Exclude<Tool, 'select'>;
@@ -12,7 +13,7 @@ interface ToolOption {
   value: Tool;
   label: string;
   description: string;
-  icon: string;
+  icon: IconName;
 }
 
 interface PrototypeElement {
@@ -116,37 +117,37 @@ const toolOptions: ToolOption[] = [
     value: 'select',
     label: 'Selecionar',
     description: 'Selecionar e mover objetos no canvas',
-    icon: 'M6 3l12 11-6 1.5L9 21 6 3z'
+    icon: 'mouse-pointer'
   },
   {
     value: 'rectangle',
     label: 'Retângulo',
     description: 'Adicionar área retangular ao canvas',
-    icon: 'M4 7h16v10H4V7z'
+    icon: 'rectangle'
   },
   {
     value: 'circle',
     label: 'Círculo',
     description: 'Adicionar forma circular ao canvas',
-    icon: 'M12 4a8 8 0 100 16 8 8 0 000-16z'
+    icon: 'circle'
   },
   {
     value: 'text',
     label: 'Texto',
     description: 'Adicionar texto ao canvas',
-    icon: 'M5 5h14M12 5v14M8 19h8'
+    icon: 'text'
   },
   {
     value: 'button',
     label: 'Botão',
     description: 'Adicionar botão ao canvas',
-    icon: 'M5 8h14a3 3 0 010 6H5a3 3 0 010-6z'
+    icon: 'button'
   },
   {
     value: 'input',
     label: 'Campo',
     description: 'Adicionar campo de texto ao canvas',
-    icon: 'M4 7h16v10H4V7zM8 11h8'
+    icon: 'input'
   }
 ];
 
@@ -515,10 +516,13 @@ const updateSelectedFill = (value: string): void => {
 </script>
 
 <template>
-  <AppLayout :user="user" :preferences="preferences" :flash="flash">
-    <section class="mx-auto grid w-full max-w-[1840px] px-6" data-testid="prototype-editor">
-      <div class="grid w-full gap-5">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+  <AppLayout :user="user" :preferences="preferences" :flash="flash" wide>
+    <section
+      class="grid h-[calc(100vh-8rem)] w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+      data-testid="prototype-editor"
+    >
+      <div class="grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)]">
+        <div class="flex flex-wrap items-start justify-between gap-4 px-6 pb-4">
           <div class="grid gap-1">
             <p class="text-lg font-bold text-blue-900">{{ projectName }}</p>
             <h1 class="text-4xl font-black text-slate-950">Editor de protótipo</h1>
@@ -533,11 +537,9 @@ const updateSelectedFill = (value: string): void => {
           </a>
         </div>
 
-        <div
-          class="grid w-full items-start justify-center gap-5 xl:grid-cols-[220px_minmax(0,1280px)_340px]"
-        >
+        <div class="grid min-h-0 w-full gap-2 px-2 xl:grid-cols-[220px_minmax(0,1fr)_340px]">
           <aside
-            class="grid min-w-0 content-start gap-4 overflow-hidden rounded-2xl border-2 border-slate-300 bg-white p-4"
+            class="grid min-h-0 min-w-0 content-start gap-4 overflow-hidden rounded-2xl border-2 border-slate-300 bg-white p-4"
             aria-label="Ferramentas"
           >
             <h2 class="text-2xl font-black text-slate-950">Ferramentas</h2>
@@ -550,90 +552,23 @@ const updateSelectedFill = (value: string): void => {
                 :aria-label="tool.description"
                 :aria-pressed="activeTool === tool.value"
                 :testid="`tool-${tool.value}`"
+                :icon="tool.icon"
                 @click="selectTool(tool.value)"
               >
-                <span class="flex w-full items-center gap-3">
-                  <svg
-                    class="h-8 w-8 shrink-0"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      :d="tool.icon"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>{{ tool.label }}</span>
-                </span>
-              </BaseButton>
-            </div>
-
-            <div class="grid gap-2" aria-label="Adicionar objeto rapido">
-              <BaseButton
-                type="button"
-                variant="secondary"
-                testid="add-rectangle"
-                @click="addElement('rectangle')"
-              >
-                <span class="flex w-full items-center gap-3">
-                  <svg
-                    class="h-8 w-8 shrink-0"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      d="M4 7h16v10H4V7z"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Retângulo</span>
-                </span>
-              </BaseButton>
-              <BaseButton
-                type="button"
-                variant="secondary"
-                testid="add-button"
-                @click="addElement('button')"
-              >
-                <span class="flex w-full items-center gap-3">
-                  <svg
-                    class="h-8 w-8 shrink-0"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      d="M5 8h14a3 3 0 010 6H5a3 3 0 010-6z"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Botão</span>
-                </span>
+                {{ tool.label }}
               </BaseButton>
             </div>
           </aside>
 
-          <main class="grid min-w-0 justify-items-center gap-3">
+          <main class="flex min-h-0 min-w-0 justify-center overflow-hidden">
             <div
-              class="flex w-full justify-center overflow-auto rounded-2xl border-2 border-slate-300 bg-slate-100 p-4"
+              class="flex h-[720px] w-[1280px] shrink-0 overflow-hidden border-2 border-slate-300 bg-slate-100"
               aria-label="Area de edicao do prototipo"
             >
               <svg
                 ref="svgRef"
                 :viewBox="`0 0 ${canvasWidth} ${canvasHeight}`"
-                class="block h-auto w-full max-w-[1280px] min-w-[760px] rounded-xl bg-white shadow-inner"
+                class="block h-[720px] w-[1280px] bg-white shadow-inner"
                 role="application"
                 aria-label="Canvas do prototipo. Arraste objetos com o mouse ou use setas do teclado."
                 data-testid="editor-canvas"
@@ -728,7 +663,8 @@ const updateSelectedFill = (value: string): void => {
                     v-else
                     :x="element.x"
                     :y="element.y + 36"
-                    class="select-none fill-slate-950 text-[34px] font-black"
+                    :fill="element.fill"
+                    class="select-none text-[34px] font-black"
                   >
                     {{ element.label }}
                   </text>
@@ -774,7 +710,7 @@ const updateSelectedFill = (value: string): void => {
           </main>
 
           <aside
-            class="grid min-w-0 content-start gap-4 rounded-2xl border-2 border-slate-400 bg-white p-4 shadow-sm ring-1 ring-slate-100"
+            class="grid min-h-0 min-w-0 content-start gap-4 overflow-y-auto rounded-2xl border-2 border-slate-400 bg-white p-4 shadow-sm ring-1 ring-slate-100"
             aria-label="Propriedades"
           >
             <h2 class="text-2xl font-black text-slate-950">Propriedades</h2>
