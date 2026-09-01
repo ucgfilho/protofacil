@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { BaseButton, BaseIcon, BaseInput } from '@protofacil/ui';
 import AppLayout from '../../layouts/AppLayout.vue';
 import type { AuthenticatedUser, UserPreferences } from '@protofacil/shared';
 import type { IconName } from '@protofacil/ui';
 
 type Tool = 'select' | 'rectangle' | 'circle' | 'text' | 'button' | 'input';
-type ElementType = Exclude<Tool, 'select'>;
+type ElementType = Exclude<Tool, 'select'> | 'image';
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se';
 
 interface ToolOption {
@@ -26,6 +26,16 @@ interface PrototypeElement {
   height: number;
   fill: string;
   stroke: string;
+  borderEnabled: boolean;
+  imageSrc?: string;
+  sourceUrl?: string;
+}
+
+interface PinterestImage {
+  id: string;
+  title: string;
+  imageUrl: string;
+  pinUrl: string;
 }
 
 interface DragState {
@@ -59,8 +69,8 @@ defineProps<{
   projectName: string;
 }>();
 
-const canvasWidth = 1280;
-const canvasHeight = 720;
+const canvasWidth = 390;
+const canvasHeight = 844;
 
 const svgRef = ref<SVGSVGElement | null>(null);
 const activeTool = ref<Tool>('select');
@@ -71,40 +81,51 @@ const nextElementNumber = ref(6);
 const minElementWidth = 64;
 const minElementHeight = 44;
 const resizeHandleSize = 22;
+const imageDialogOpen = ref(false);
+const imageQuery = ref('');
+const imageResults = ref<PinterestImage[]>([]);
+const imageSearchError = ref('');
+const isSearchingImages = ref(false);
+const imageButtonRef = ref<HTMLElement | null>(null);
+const imageSearchInputRef = ref<HTMLInputElement | null>(null);
+const imageSearchAbort = ref<AbortController | null>(null);
 
 const elements = ref<PrototypeElement[]>([
   {
     id: 'element-1',
     type: 'rectangle',
     label: 'Cartao principal',
-    x: 120,
-    y: 110,
-    width: 360,
+    x: 32,
+    y: 120,
+    width: 326,
     height: 220,
     fill: '#dbeafe',
-    stroke: '#1d4ed8'
+    stroke: '#1d4ed8',
+    borderEnabled: false
   },
   {
     id: 'element-2',
     type: 'text',
     label: 'Titulo da tela',
-    x: 160,
-    y: 155,
+    x: 62,
+    y: 165,
     width: 250,
     height: 56,
     fill: '#ffffff',
-    stroke: '#0f172a'
+    stroke: '#0f172a',
+    borderEnabled: false
   },
   {
     id: 'element-3',
     type: 'button',
     label: 'Continuar',
-    x: 165,
-    y: 250,
+    x: 72,
+    y: 270,
     width: 180,
     height: 64,
     fill: '#1d4ed8',
-    stroke: '#1e3a8a'
+    stroke: '#1e3a8a',
+    borderEnabled: false
   }
 ]);
 
@@ -213,7 +234,8 @@ const createElement = (type: ElementType, x: number, y: number): PrototypeElemen
     width: 180,
     height: 72,
     fill: '#ffffff',
-    stroke: '#1d4ed8'
+    stroke: '#1d4ed8',
+    borderEnabled: false
   };
 
   if (type === 'circle') {
@@ -239,7 +261,7 @@ const createElement = (type: ElementType, x: number, y: number): PrototypeElemen
   }
 
   if (type === 'button') {
-    return { ...base, label: 'Botao', width: 190, height: 64, fill: '#1d4ed8', stroke: '#1e3a8a' };
+    return { ...base, label: 'Botão', width: 190, height: 64, fill: '#1d4ed8', stroke: '#1e3a8a' };
   }
 
   if (type === 'input') {
@@ -256,16 +278,116 @@ const createElement = (type: ElementType, x: number, y: number): PrototypeElemen
   return { ...base, label: 'Retangulo', width: 220, height: 120, fill: '#dbeafe' };
 };
 
-const addElement = (type: ElementType): void => {
-  const element = createElement(
-    type,
-    240 + elements.value.length * 24,
-    180 + elements.value.length * 18
-  );
+const openImageDialog = async (event: MouseEvent): Promise<void> => {
+  imageButtonRef.value = event.currentTarget as HTMLElement;
+  imageDialogOpen.value = true;
+  imageSearchError.value = '';
+  await nextTick();
+  imageSearchInputRef.value?.focus();
+};
+
+const closeImageDialog = async (): Promise<void> => {
+  imageSearchAbort.value?.abort();
+  imageDialogOpen.value = false;
+  await nextTick();
+  imageButtonRef.value?.focus();
+};
+
+const searchPinterestImages = async (): Promise<void> => {
+  const query = imageQuery.value.trim();
+  if (query.length < 2) {
+    imageSearchError.value = 'Digite pelo menos 2 letras para pesquisar.';
+    return;
+  }
+
+  imageSearchAbort.value?.abort();
+  const controller = new AbortController();
+  imageSearchAbort.value = controller;
+  isSearchingImages.value = true;
+  imageSearchError.value = '';
+
+  try {
+    const response = await fetch(`/api/imagens/pinterest?q=${encodeURIComponent(query)}`, {
+      signal: controller.signal
+    });
+    const payload = (await response.json()) as {
+      images?: PinterestImage[];
+      message?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(payload.message ?? 'NÃ£o foi possÃ­vel pesquisar imagens.');
+    }
+
+    imageResults.value = payload.images ?? [];
+    if (imageResults.value.length === 0) {
+      imageSearchError.value = 'Nenhuma imagem encontrada. Tente outras palavras.';
+    }
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return;
+    }
+    imageSearchError.value =
+      error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel pesquisar imagens.';
+  } finally {
+    if (imageSearchAbort.value === controller) {
+      isSearchingImages.value = false;
+    }
+  }
+};
+
+const addPinterestImage = async (image: PinterestImage): Promise<void> => {
+  const width = 300;
+  const element: PrototypeElement = {
+    id: `element-${nextElementNumber.value}`,
+    type: 'image',
+    label: image.title,
+    x: (canvasWidth - width) / 2,
+    y: 210,
+    width,
+    height: 220,
+    fill: '#ffffff',
+    stroke: '#1d4ed8',
+    borderEnabled: false,
+    imageSrc: image.imageUrl,
+    sourceUrl: image.pinUrl
+  };
+  nextElementNumber.value += 1;
   elements.value.push(element);
   selectedElementId.value = element.id;
-  activeTool.value = 'select';
+  await closeImageDialog();
 };
+
+const handleDialogKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    void closeImageDialog();
+    return;
+  }
+
+  if (event.key !== 'Tab') {
+    return;
+  }
+
+  const dialog = event.currentTarget as HTMLElement;
+  const focusable = Array.from(
+    dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')
+  );
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!first || !last) {
+    return;
+  }
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};
+
+onBeforeUnmount(() => imageSearchAbort.value?.abort());
 
 const handleCanvasPointerDown = (event: PointerEvent): void => {
   if (activeTool.value === 'select') {
@@ -513,19 +635,53 @@ const updateSelectedFill = (value: string): void => {
     element.fill = value;
   }
 };
+
+const getReadableTextColor = (backgroundColor: string): '#ffffff' | '#0f172a' => {
+  const normalized = backgroundColor.replace('#', '');
+  if (!/^[\da-f]{6}$/i.test(normalized)) {
+    return '#0f172a';
+  }
+
+  const channels = [0, 2, 4].map((offset) => Number.parseInt(normalized.slice(offset, offset + 2), 16) / 255);
+  const [red = 0, green = 0, blue = 0] = channels.map((channel) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  );
+  const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  const darkContrast = (luminance + 0.05) / 0.057;
+
+  return whiteContrast >= darkContrast ? '#ffffff' : '#0f172a';
+};
+
+const setSelectedBorder = (enabled: boolean): void => {
+  const element = selectedElement.value;
+
+  if (element && element.type !== 'image') {
+    element.borderEnabled = enabled;
+  }
+};
+
+const updateSelectedBorderColor = (value: string): void => {
+  const element = selectedElement.value;
+
+  if (element && element.type !== 'image') {
+    element.stroke = value;
+    element.borderEnabled = true;
+  }
+};
 </script>
 
 <template>
   <AppLayout :user="user" :preferences="preferences" :flash="flash" wide>
     <section
-      class="grid h-[calc(100vh-8rem)] w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+      class="grid w-full gap-4 xl:h-[calc(100vh-8rem)] xl:grid-rows-[auto_minmax(0,1fr)] xl:overflow-hidden"
       data-testid="prototype-editor"
     >
-      <div class="grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)]">
-        <div class="flex flex-wrap items-start justify-between gap-4 px-6 pb-4">
+      <div class="grid h-full min-h-0 w-full gap-4 xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-0">
+        <div class="flex flex-col items-stretch justify-between gap-4 px-4 sm:flex-row sm:items-start sm:px-6 sm:pb-4">
           <div class="grid gap-1">
             <p class="text-lg font-bold text-blue-900">{{ projectName }}</p>
-            <h1 class="text-4xl font-black text-slate-950">Editor de protótipo</h1>
+            <h1 class="text-3xl font-black text-slate-950 sm:text-4xl">Editor de protótipo</h1>
           </div>
           <a
             class="inline-flex min-h-12 items-center gap-3 rounded-xl border-2 border-blue-800 bg-white px-5 py-3 text-lg font-bold text-blue-900 underline"
@@ -537,9 +693,9 @@ const updateSelectedFill = (value: string): void => {
           </a>
         </div>
 
-        <div class="grid min-h-0 w-full gap-2 px-2 xl:grid-cols-[220px_minmax(0,1fr)_340px]">
+        <div class="grid min-h-0 w-full gap-3 px-3 xl:grid-cols-[230px_minmax(0,1fr)_340px]">
           <aside
-            class="grid min-h-0 min-w-0 content-start gap-4 overflow-hidden rounded-2xl border-2 border-slate-300 bg-white p-4"
+            class="grid min-h-0 min-w-0 content-start gap-4 rounded-2xl border-2 border-slate-300 bg-white p-4 xl:overflow-y-auto"
             aria-label="Ferramentas"
           >
             <h2 class="text-2xl font-black text-slate-950">Ferramentas</h2>
@@ -558,17 +714,32 @@ const updateSelectedFill = (value: string): void => {
                 {{ tool.label }}
               </BaseButton>
             </div>
+            <div class="border-t-2 border-slate-200 pt-4">
+              <BaseButton
+                type="button"
+                variant="primary"
+                icon="image"
+                testid="open-image-search"
+                aria-haspopup="dialog"
+                :aria-expanded="imageDialogOpen"
+                @click="openImageDialog"
+              >
+                Adicionar imagem
+              </BaseButton>
+            </div>
           </aside>
 
-          <main class="flex min-h-0 min-w-0 justify-center overflow-hidden">
+          <main class="flex min-h-0 min-w-0 justify-center overflow-auto rounded-2xl bg-slate-200 p-3 sm:p-6">
             <div
-              class="flex h-[720px] w-[1280px] shrink-0 overflow-hidden border-2 border-slate-300 bg-slate-100"
+              class="relative h-fit w-full max-w-[430px] shrink-0 self-start rounded-[3rem] border-[10px] border-slate-900 bg-slate-900 p-2 shadow-2xl"
               aria-label="Area de edicao do prototipo"
+              data-testid="phone-frame"
             >
+              <div class="pointer-events-none absolute left-1/2 top-3 z-10 h-6 w-28 -translate-x-1/2 rounded-full bg-slate-900" aria-hidden="true" />
               <svg
                 ref="svgRef"
                 :viewBox="`0 0 ${canvasWidth} ${canvasHeight}`"
-                class="block h-[720px] w-[1280px] bg-white shadow-inner"
+                class="block aspect-[390/844] h-auto w-full rounded-[2.15rem] bg-white shadow-inner"
                 role="application"
                 aria-label="Canvas do prototipo. Arraste objetos com o mouse ou use setas do teclado."
                 data-testid="editor-canvas"
@@ -603,7 +774,7 @@ const updateSelectedFill = (value: string): void => {
                     :height="element.height"
                     rx="12"
                     :fill="element.fill"
-                    :stroke="element.stroke"
+                    :stroke="element.borderEnabled ? element.stroke : 'none'"
                     stroke-width="4"
                   />
 
@@ -614,7 +785,7 @@ const updateSelectedFill = (value: string): void => {
                     :rx="element.width / 2"
                     :ry="element.height / 2"
                     :fill="element.fill"
-                    :stroke="element.stroke"
+                    :stroke="element.borderEnabled ? element.stroke : 'none'"
                     stroke-width="4"
                   />
 
@@ -626,14 +797,17 @@ const updateSelectedFill = (value: string): void => {
                       :height="element.height"
                       rx="14"
                       :fill="element.fill"
-                      :stroke="element.stroke"
+                      :stroke="element.borderEnabled ? element.stroke : 'none'"
                       stroke-width="4"
                     />
                     <text
                       :x="element.x + element.width / 2"
-                      :y="element.y + element.height / 2 + 8"
+                      :y="element.y + element.height / 2"
                       text-anchor="middle"
-                      class="select-none fill-white text-[28px] font-bold"
+                      dominant-baseline="middle"
+                      :fill="getReadableTextColor(element.fill)"
+                      class="pointer-events-none select-none text-[26px] font-black"
+                      :data-testid="`button-label-${element.id}`"
                     >
                       {{ element.label }}
                     </text>
@@ -647,7 +821,7 @@ const updateSelectedFill = (value: string): void => {
                       :height="element.height"
                       rx="10"
                       :fill="element.fill"
-                      :stroke="element.stroke"
+                      :stroke="element.borderEnabled ? element.stroke : 'none'"
                       stroke-width="4"
                     />
                     <text
@@ -658,6 +832,28 @@ const updateSelectedFill = (value: string): void => {
                       {{ element.label }}
                     </text>
                   </g>
+
+                  <image
+                    v-else-if="element.type === 'image'"
+                    :href="element.imageSrc"
+                    :x="element.x"
+                    :y="element.y"
+                    :width="element.width"
+                    :height="element.height"
+                    preserveAspectRatio="xMidYMid slice"
+                  />
+
+                  <rect
+                    v-if="element.type === 'text' && element.borderEnabled"
+                    :x="element.x - 8"
+                    :y="element.y - 8"
+                    :width="element.width + 16"
+                    :height="element.height + 16"
+                    rx="8"
+                    fill="none"
+                    :stroke="element.stroke"
+                    stroke-width="4"
+                  />
 
                   <text
                     v-else
@@ -754,6 +950,49 @@ const updateSelectedFill = (value: string): void => {
                 </div>
               </div>
 
+              <fieldset
+                v-if="selectedElement.type !== 'image'"
+                class="grid gap-3 rounded-2xl border-2 border-slate-300 p-3"
+                data-testid="border-properties"
+              >
+                <legend class="px-2 text-lg font-black text-slate-950">Borda</legend>
+                <p class="text-base font-bold text-slate-700" role="status">
+                  {{ selectedElement.borderEnabled ? 'Borda adicionada' : 'Sem borda' }}
+                </p>
+
+                <BaseButton
+                  v-if="selectedElement.borderEnabled"
+                  type="button"
+                  variant="danger"
+                  icon="x"
+                  testid="remove-border"
+                  @click="setSelectedBorder(false)"
+                >
+                  Remover borda
+                </BaseButton>
+                <BaseButton
+                  v-else
+                  type="button"
+                  variant="secondary"
+                  icon="rectangle"
+                  testid="add-border"
+                  @click="setSelectedBorder(true)"
+                >
+                  Adicionar borda
+                </BaseButton>
+
+                <label class="grid gap-2 text-base font-bold text-slate-800">
+                  Cor da borda
+                  <input
+                    :value="selectedElement.stroke"
+                    type="color"
+                    class="h-14 w-full cursor-pointer rounded-xl border-2 border-slate-700 bg-white p-1"
+                    data-testid="selected-border-color"
+                    @input="updateSelectedBorderColor(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+              </fieldset>
+
               <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                 <BaseButton
                   type="button"
@@ -783,5 +1022,95 @@ const updateSelectedFill = (value: string): void => {
         </div>
       </div>
     </section>
+
+    <div
+      v-if="imageDialogOpen"
+      class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/70 p-3 sm:p-6"
+      data-testid="image-search-backdrop"
+      @mousedown.self="closeImageDialog"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="image-dialog-title"
+        aria-describedby="image-dialog-help"
+        class="my-auto grid max-h-[92vh] w-full max-w-4xl gap-5 overflow-hidden rounded-3xl border-4 border-blue-900 bg-white p-5 shadow-2xl sm:p-7"
+        data-testid="image-search-dialog"
+        @keydown="handleDialogKeydown"
+      >
+        <header class="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="image-dialog-title" class="text-2xl font-black text-slate-950 sm:text-3xl">
+              Pesquisar imagem no Pinterest
+            </h2>
+            <p id="image-dialog-help" class="mt-2 text-lg text-slate-700">
+              Digite o que procura e toque em uma imagem para adicioná-la à tela do celular.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl border-2 border-slate-700 bg-white"
+            aria-label="Fechar pesquisa de imagens"
+            data-testid="close-image-search"
+            @click="closeImageDialog"
+          >
+            <BaseIcon name="x" />
+          </button>
+        </header>
+
+        <form class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]" @submit.prevent="searchPinterestImages">
+          <label class="grid gap-2 text-lg font-bold text-slate-900">
+            O que você quer encontrar?
+            <input
+              ref="imageSearchInputRef"
+              v-model="imageQuery"
+              type="search"
+              class="min-h-14 rounded-xl border-2 border-slate-700 px-4 text-lg"
+              placeholder="Exemplo: flores coloridas"
+              autocomplete="off"
+              data-testid="image-search-input"
+            />
+          </label>
+          <BaseButton
+            class="self-end"
+            type="submit"
+            variant="primary"
+            icon="search"
+            testid="search-pinterest-images"
+            :disabled="isSearchingImages"
+          >
+            {{ isSearchingImages ? 'Pesquisando...' : 'Pesquisar' }}
+          </BaseButton>
+        </form>
+
+        <p v-if="imageSearchError" class="rounded-xl bg-red-100 p-4 text-lg font-bold text-red-900" role="alert">
+          {{ imageSearchError }}
+        </p>
+        <p v-else-if="isSearchingImages" class="text-lg font-bold text-blue-900" role="status">
+          Buscando imagens no Pinterest...
+        </p>
+
+        <div
+          v-if="imageResults.length"
+          class="image-results-scrollbar grid max-h-[42vh] min-h-0 grid-cols-2 gap-3 overscroll-contain rounded-2xl border-2 border-slate-300 bg-slate-50 p-2 pr-3 sm:max-h-[50vh] sm:grid-cols-3"
+          aria-label="Resultados da pesquisa"
+          tabindex="0"
+          data-testid="image-search-results"
+        >
+          <button
+            v-for="image in imageResults"
+            :key="image.id"
+            type="button"
+            class="group grid min-h-44 overflow-hidden rounded-2xl border-2 border-slate-500 bg-slate-100 text-left focus-visible:border-blue-800"
+            :aria-label="`Adicionar ${image.title}`"
+            :data-testid="`pinterest-image-${image.id}`"
+            @click="addPinterestImage(image)"
+          >
+            <img :src="image.imageUrl" :alt="image.title" class="h-40 w-full object-cover sm:h-48" loading="lazy" />
+            <span class="bg-white p-3 text-base font-bold text-slate-900">Adicionar esta imagem</span>
+          </button>
+        </div>
+      </section>
+    </div>
   </AppLayout>
 </template>

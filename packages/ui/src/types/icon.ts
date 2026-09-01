@@ -9,6 +9,7 @@ export type IconName =
   | 'email'
   | 'folder'
   | 'home'
+  | 'image'
   | 'info'
   | 'input'
   | 'key'
