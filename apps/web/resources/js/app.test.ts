@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 describe('frontend acessível', () => {
   it('mantém textos de ações principais visíveis', () => {
@@ -55,5 +55,13 @@ describe('frontend acessível', () => {
     expect(editorSource).toContain('dominant-baseline="middle"');
     expect(editorSource).toContain(':fill="getReadableTextColor(element.fill)"');
     expect(editorSource).toContain(':data-testid="`button-label-${element.id}`"');
+  });
+
+  it('não exibe a tela nem o link de configurações de acessibilidade', () => {
+    const layoutSource = readFileSync(new URL('./layouts/AppLayout.vue', import.meta.url), 'utf8');
+    const preferencesPage = new URL('./pages/Preferences/Edit.vue', import.meta.url);
+
+    expect(layoutSource).not.toContain('/perfil/acessibilidade');
+    expect(existsSync(preferencesPage)).toBe(false);
   });
 });

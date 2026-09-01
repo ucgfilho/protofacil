@@ -30,10 +30,6 @@ const contrast = computed(() => props.preferences?.contrastMode ?? 'default');
             <BaseIcon name="folder" />
             <span>Projetos</span>
           </a>
-          <a class="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 py-3 font-bold underline focus-visible:outline-blue-700" href="/perfil/acessibilidade">
-            <BaseIcon name="accessibility" />
-            <span>Acessibilidade</span>
-          </a>
           <form v-if="user" method="post" action="/logout">
             <button class="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 py-3 font-bold underline" type="submit" data-testid="logout-button">
               <BaseIcon name="logout" />
