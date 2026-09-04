@@ -11,7 +11,20 @@ export const createApp = (): express.Express => {
   const app = express();
 
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: env.appUrl, credentials: true }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || !env.isProduction) {
+          return callback(null, true);
+        }
+        if (origin === env.appUrl) {
+          return callback(null, true);
+        }
+        return callback(new Error('Origem não permitida pelo CORS'));
+      },
+      credentials: true
+    })
+  );
   app.use('/build', express.static('public/build'));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());

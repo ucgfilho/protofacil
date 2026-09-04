@@ -22,7 +22,8 @@ if (isProduction && sessionSecret === defaultSessionSecret) {
 export const env = {
   isProduction,
   appUrl: optional('APP_URL', 'http://localhost:3000'),
-  port: Number(optional('API_PORT', '3000')),
+  port: Number(process.env.PORT ?? optional('API_PORT', '3000')),
+  viteUrl: optional('VITE_URL', process.env.VITE_PORT ? `http://localhost:${process.env.VITE_PORT}` : 'http://localhost:5173'),
   sessionSecret,
   database: {
     host: optional('DB_HOST', 'localhost'),

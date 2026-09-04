@@ -1,9 +1,41 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'node:path';
+import { writeFileSync, rmSync } from 'node:fs';
+
+const portSyncPlugin = (): Plugin => {
+  const portFile = resolve(__dirname, '../../.vite-port');
+
+  const removeFile = () => {
+    try {
+      rmSync(portFile, { force: true });
+    } catch {
+      // ignore
+    }
+  };
+
+  return {
+    name: 'protofacil-port-sync',
+    configureServer(server) {
+      server.httpServer?.on('listening', () => {
+        const address = server.httpServer?.address();
+        if (address && typeof address === 'object') {
+          try {
+            writeFileSync(portFile, String(address.port), 'utf8');
+          } catch {
+            // ignore
+          }
+        }
+      });
+
+      server.httpServer?.on('close', removeFile);
+      process.on('exit', removeFile);
+    }
+  };
+};
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), portSyncPlugin()],
   root: '.',
   build: {
     target: 'esnext',
@@ -20,7 +52,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173,
-    strictPort: true
+    port: Number(process.env.VITE_PORT) || 5173,
+    strictPort: false
   }
 });
