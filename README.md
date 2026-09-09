@@ -1,44 +1,39 @@
-# ProtoFácil
+## Como rodar
 
-Ferramenta de prototipagem acessível para codesigners idosos (60+), construída com Vue 3, Inertia.js, Express e MySQL.
+1. Clone o repositório e acesse a pasta raiz:
+   ```bash
+   git clone https://github.com/ucgfilho/protofacil.git
+   cd protofacil
+   ```
 
-## Stack
+2. Crie o arquivo de variáveis de ambiente:
+   ```bash
+   cp .env.example .env
+   ```
 
-- Vue 3 + TypeScript + Inertia.js + Vite + TailwindCSS + Pinia
-- Node.js + Express + TypeScript
-- MariaDB/MySQL com mysql2
-- Sessão com cookie httpOnly
+3. Suba o ambiente com o Docker Compose:
+   ```bash
+   docker compose up -d --build
+   ```
 
-## Configuração rápida
+4. Acesse os serviços no navegador:
+   - **ProtoFácil (Aplicação Web)**: [http://localhost:8000](http://localhost:8000)
+   - **Vite HMR (Servidor de Assets)**: [http://localhost:5174](http://localhost:5174)
+   - **Adminer (Gerenciador do MySQL)**: [http://localhost:8080](http://localhost:8080)
 
-1. Instale as dependências:
+## Scripts Disponíveis
 
-```bash
-npm install
-```
+| Comando | Descrição |
+| --- | --- |
+| `npm run dev` | Inicia a API Express e o Vite em modo de desenvolvimento |
+| `npm run build` | Compila todos os pacotes e aplicações do monorepo |
+| `npm run typecheck --ws` | Executa a validação de tipos TypeScript em todos os workspaces |
+| `npm run test -w apps/api` | Executa a suíte de testes unitários da API |
+| `npm run db:check -w apps/api` | Valida a conectividade com o banco de dados |
+| `npm run db:migrate -w apps/api` | Executa as migrações SQL pendentes |
 
-2. Crie o arquivo de ambiente:
+---
 
-```bash
-cp .env.example .env
-```
+## Acessibilidade
 
-3. Ajuste as variáveis do banco no `.env`
-
-4. Crie o banco configurado em `DB_NAME`:
-
-```bash
-mariadb -u seu-usuario -p -e "CREATE DATABASE protofacil"
-```
-
-5. Rode as migrações:
-
-```bash
-npm run db:migrate -w apps/api
-```
-
-6. Inicie o projeto:
-
-```bash
-npm run dev
-```
+Consulte [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) para diretrizes de acessibilidade e [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para detalhes arquiteturais do projeto.
