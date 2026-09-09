@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, onMounted, watch } from 'vue';
 import { BaseButton, BaseIcon, BaseInput } from '@protofacil/ui';
 import AppLayout from '../../layouts/AppLayout.vue';
 import type { AuthenticatedUser, UserPreferences } from '@protofacil/shared';
@@ -58,7 +58,7 @@ interface ResizeHandleOption {
   cursor: string;
 }
 
-defineProps<{
+const props = defineProps<{
   user: AuthenticatedUser | null;
   preferences: UserPreferences | null;
   flash: {
@@ -67,6 +67,7 @@ defineProps<{
   };
   projectId: string;
   projectName: string;
+  jwtToken: string;
 }>();
 
 const canvasWidth = 390;
@@ -90,44 +91,71 @@ const imageButtonRef = ref<HTMLElement | null>(null);
 const imageSearchInputRef = ref<HTMLInputElement | null>(null);
 const imageSearchAbort = ref<AbortController | null>(null);
 
-const elements = ref<PrototypeElement[]>([
-  {
-    id: 'element-1',
-    type: 'rectangle',
-    label: 'Cartao principal',
-    x: 32,
-    y: 120,
-    width: 326,
-    height: 220,
-    fill: '#dbeafe',
-    stroke: '#1d4ed8',
-    borderEnabled: false
-  },
-  {
-    id: 'element-2',
-    type: 'text',
-    label: 'Titulo da tela',
-    x: 62,
-    y: 165,
-    width: 250,
-    height: 56,
-    fill: '#ffffff',
-    stroke: '#0f172a',
-    borderEnabled: false
-  },
-  {
-    id: 'element-3',
-    type: 'button',
-    label: 'Continuar',
-    x: 72,
-    y: 270,
-    width: 180,
-    height: 64,
-    fill: '#1d4ed8',
-    stroke: '#1e3a8a',
-    borderEnabled: false
+const elements = ref<PrototypeElement[]>([]);
+const isSaving = ref(false);
+const lastSaved = ref<Date | null>(null);
+const isLoaded = ref(false);
+
+const loadCanvas = async () => {
+  try {
+    const response = await fetch(`/api/projetos/${props.projectId}/canvas`, {
+      headers: {
+        'Authorization': `Bearer ${props.jwtToken}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.canvas && data.canvas.elements_json && Array.isArray(data.canvas.elements_json)) {
+        elements.value = data.canvas.elements_json;
+        if (elements.value.length > 0) {
+          const maxId = Math.max(...elements.value.map(e => parseInt(e.id.replace('element-', '')) || 0));
+          nextElementNumber.value = maxId + 1;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao carregar projeto', err);
+  } finally {
+    // Wait a tick to prevent the watcher from triggering an immediate save
+    nextTick(() => {
+      isLoaded.value = true;
+    });
   }
-]);
+};
+
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const autoSaveCanvas = () => {
+  if (!isLoaded.value) return;
+  
+  if (saveTimeout) clearTimeout(saveTimeout);
+  isSaving.value = true;
+  saveTimeout = setTimeout(async () => {
+    try {
+      await fetch(`/api/projetos/${props.projectId}/canvas`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${props.jwtToken}`
+        },
+        body: JSON.stringify({ elements: elements.value })
+      });
+      lastSaved.value = new Date();
+    } catch (err) {
+      console.error('Erro ao salvar projeto', err);
+    } finally {
+      isSaving.value = false;
+    }
+  }, 1000);
+};
+
+onMounted(() => {
+  loadCanvas();
+});
+
+watch(elements, () => {
+  autoSaveCanvas();
+}, { deep: true });
 
 const selectedElement = computed(
   () => elements.value.find((element) => element.id === selectedElementId.value) ?? null
@@ -680,7 +708,11 @@ const updateSelectedBorderColor = (value: string): void => {
       <div class="grid h-full min-h-0 w-full gap-4 xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-0">
         <div class="flex flex-col items-stretch justify-between gap-4 px-4 sm:flex-row sm:items-start sm:px-6 sm:pb-4">
           <div class="grid gap-1">
-            <p class="text-lg font-bold text-blue-900">{{ projectName }}</p>
+            <p class="text-lg font-bold text-blue-900">
+              {{ projectName }}
+              <span v-if="isSaving" class="text-slate-500 ml-4 font-normal text-sm">Salvando...</span>
+              <span v-else-if="lastSaved" class="text-green-600 ml-4 font-normal text-sm">Salvo</span>
+            </p>
             <h1 class="text-3xl font-black text-slate-950 sm:text-4xl">Editor de protótipo</h1>
           </div>
           <a
@@ -806,7 +838,8 @@ const updateSelectedBorderColor = (value: string): void => {
                       text-anchor="middle"
                       dominant-baseline="middle"
                       :fill="getReadableTextColor(element.fill)"
-                      class="pointer-events-none select-none text-[26px] font-black"
+                      stroke="none"
+                      class="pointer-events-none select-none font-sans text-[26px] font-bold"
                       :data-testid="`button-label-${element.id}`"
                     >
                       {{ element.label }}
@@ -827,7 +860,8 @@ const updateSelectedBorderColor = (value: string): void => {
                     <text
                       :x="element.x + 20"
                       :y="element.y + element.height / 2 + 8"
-                      class="select-none fill-slate-700 text-[26px]"
+                      stroke="none"
+                      class="select-none font-sans fill-slate-700 text-[26px]"
                     >
                       {{ element.label }}
                     </text>
@@ -843,27 +877,28 @@ const updateSelectedBorderColor = (value: string): void => {
                     preserveAspectRatio="xMidYMid slice"
                   />
 
-                  <rect
-                    v-if="element.type === 'text' && element.borderEnabled"
-                    :x="element.x - 8"
-                    :y="element.y - 8"
-                    :width="element.width + 16"
-                    :height="element.height + 16"
-                    rx="8"
-                    fill="none"
-                    :stroke="element.stroke"
-                    stroke-width="4"
-                  />
-
-                  <text
-                    v-else
-                    :x="element.x"
-                    :y="element.y + 36"
-                    :fill="element.fill"
-                    class="select-none text-[34px] font-black"
-                  >
-                    {{ element.label }}
-                  </text>
+                  <g v-else-if="element.type === 'text'">
+                    <rect
+                      v-if="element.borderEnabled"
+                      :x="element.x - 8"
+                      :y="element.y - 8"
+                      :width="element.width + 16"
+                      :height="element.height + 16"
+                      rx="8"
+                      fill="none"
+                      :stroke="element.stroke"
+                      stroke-width="4"
+                    />
+                    <text
+                      :x="element.x"
+                      :y="element.y + 36"
+                      :fill="element.fill"
+                      stroke="none"
+                      class="select-none font-sans text-[34px] font-bold"
+                    >
+                      {{ element.label }}
+                    </text>
+                  </g>
 
                   <rect
                     v-if="selectedElementId === element.id"

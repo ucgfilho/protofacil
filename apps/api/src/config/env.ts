@@ -19,12 +19,15 @@ if (isProduction && sessionSecret === defaultSessionSecret) {
   throw new Error('SESSION_SECRET seguro é obrigatório em produção.');
 }
 
+const jwtSecret = optional('JWT_SECRET', sessionSecret);
+
 export const env = {
   isProduction,
   appUrl: optional('APP_URL', 'http://localhost:3000'),
   port: Number(process.env.PORT ?? optional('API_PORT', '3000')),
   viteUrl: optional('VITE_URL', process.env.VITE_PORT ? `http://localhost:${process.env.VITE_PORT}` : 'http://localhost:5173'),
   sessionSecret,
+  jwtSecret,
   database: {
     host: optional('DB_HOST', 'localhost'),
     port: Number(optional('DB_PORT', '3306')),

@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { renderPage } from '../inertia/render.js';
 import { ProjectService } from '../services/project.service.js';
 import { createProjectSchema, renameProjectSchema } from '../validators/project.validator.js';
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
 
 export class ProjectController {
   constructor(private readonly projects = new ProjectService()) {}
@@ -33,7 +35,17 @@ export class ProjectController {
       return;
     }
 
-    await renderPage(request, response, 'Editor/Show', { projectId: project.id, projectName: project.name });
+    const jwtToken = jwt.sign(
+      { id: user.id, name: user.name, email: user.email },
+      env.jwtSecret,
+      { expiresIn: '24h' }
+    );
+
+    await renderPage(request, response, 'Editor/Show', { 
+      projectId: project.id, 
+      projectName: project.name,
+      jwtToken
+    });
   };
 
   create = async (request: Request, response: Response): Promise<void> => {
