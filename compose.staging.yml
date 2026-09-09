@@ -1,0 +1,56 @@
+services:
+  web:
+    image: ${WEB_IMAGE}
+    container_name: protofacil_web_staging
+    restart: unless-stopped
+    depends_on:
+      - app
+    networks:
+      - web_proxy
+      - internal
+
+  app:
+    image: ${APP_IMAGE}
+    container_name: protofacil_app_staging
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      APP_URL: "${APP_URL}"
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: "${DB_USERNAME}"
+      DB_NAME: "${DB_DATABASE}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      SESSION_SECRET: "${SESSION_SECRET}"
+    depends_on:
+      - db
+    expose:
+      - "3000"
+    networks:
+      - internal
+
+  db:
+    image: mysql:8.0
+    container_name: protofacil_db_staging
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+    volumes:
+      - protofacil_db:/var/lib/mysql
+    networks:
+      - internal
+
+networks:
+  web_proxy:
+    external: true
+  internal:
+    driver: bridge
+
+volumes:
+  protofacil_db:

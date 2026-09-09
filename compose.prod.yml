@@ -1,0 +1,89 @@
+services:
+  web:
+    image: ${WEB_IMAGE:-${HARBOR_HOST}/${HARBOR_PROJECT}/protofacil-web:latest}
+    networks:
+      - apache_public
+      - overlay
+    depends_on:
+      - app
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=apache_public"
+        - "traefik.http.routers.protofacil.rule=Host(`${TRAEFIK_HOST:-protofacil.example.com}`)"
+        - "traefik.http.routers.protofacil.entrypoints=websecure"
+        - "traefik.http.routers.protofacil.tls=true"
+        - "traefik.http.services.protofacil.loadbalancer.server.port=80"
+
+  app:
+    image: ${APP_IMAGE:-${HARBOR_HOST}/${HARBOR_PROJECT}/protofacil-app:latest}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      APP_URL: "${APP_URL_PROD}"
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: protofacil
+      DB_NAME: protofacil
+    secrets:
+      - protofacil_db_password
+      - protofacil_session_secret
+    volumes:
+      - protofacil_logs:/app/logs
+    networks:
+      - overlay
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health > /dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: protofacil
+      MYSQL_USER: protofacil
+      MYSQL_PASSWORD_FILE: /run/secrets/protofacil_db_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/protofacil_db_password
+    secrets:
+      - protofacil_db_password
+    volumes:
+      - protofacil_db:/var/lib/mysql
+    networks:
+      - overlay
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  apache_public:
+    external: true
+  overlay:
+    driver: overlay
+
+volumes:
+  protofacil_db:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NFS_HOST:-nfs.example.com},rw,nolock,soft
+      device: ":/data/servicos/production/protofacil/data/db"
+  protofacil_logs:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NFS_HOST:-nfs.example.com},rw,nolock,soft
+      device: ":/data/servicos/production/protofacil/logs"
+
+secrets:
+  protofacil_db_password:
+    external: true
+  protofacil_session_secret:
+    external: true

@@ -1,0 +1,132 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+env:
+  IMAGE_TAG: ${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-app:${{ github.sha }}
+  WEB_IMAGE_TAG: ${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-web:${{ github.sha }}
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  build-staging:
+    name: Build (Staging)
+    needs: validate
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no registry
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login -u "${{ secrets.HARBOR_USER }}" --password-stdin "${{ vars.HARBOR_HOST }}"
+
+      - name: Build imagem app
+        run: docker build --target prod -t "${{ env.IMAGE_TAG }}" .
+
+      - name: Build imagem web (nginx)
+        run: docker build -f .docker/nginx/Dockerfile -t "${{ env.WEB_IMAGE_TAG }}" .
+
+      - name: Push imagens
+        run: |
+          docker push "${{ env.IMAGE_TAG }}"
+          docker push "${{ env.WEB_IMAGE_TAG }}"
+
+  build-production:
+    name: Build (Production)
+    needs: validate
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no registry
+        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login -u "${{ secrets.HARBOR_USER }}" --password-stdin "${{ vars.HARBOR_HOST }}"
+
+      - name: Build imagem app
+        run: docker build --target prod -t "${{ env.IMAGE_TAG }}" .
+
+      - name: Build imagem web (nginx)
+        run: docker build -f .docker/nginx/Dockerfile -t "${{ env.WEB_IMAGE_TAG }}" .
+
+      - name: Push imagens (com tag latest)
+        run: |
+          docker push "${{ env.IMAGE_TAG }}"
+          docker push "${{ env.WEB_IMAGE_TAG }}"
+          docker tag "${{ env.IMAGE_TAG }}" "${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-app:latest"
+          docker tag "${{ env.WEB_IMAGE_TAG }}" "${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-web:latest"
+          docker push "${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-app:latest"
+          docker push "${{ vars.HARBOR_HOST }}/${{ vars.HARBOR_PROJECT }}/protofacil-web:latest"
+
+  deploy-staging:
+    name: Deploy (Staging)
+    needs: build-staging
+    runs-on: self-hosted
+    environment: staging
+    concurrency: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy no staging
+        env:
+          COMPOSE_FILE: compose.staging.yml
+        run: |
+          cp compose.staging.yml "${{ vars.STAGING_APP_PATH }}/compose.staging.yml"
+          cp .docker/bin/deploy.dev.sh "${{ vars.STAGING_APP_PATH }}/.docker/bin/deploy.dev.sh"
+          chmod +x "${{ vars.STAGING_APP_PATH }}/.docker/bin/deploy.dev.sh"
+          cd "${{ vars.STAGING_APP_PATH }}"
+          COMPOSE_FILE=compose.staging.yml bash .docker/bin/deploy.dev.sh \
+            "${{ env.IMAGE_TAG }}" \
+            "${{ secrets.HARBOR_USER }}" \
+            "${{ secrets.HARBOR_PASSWORD }}" \
+            "${{ vars.HARBOR_HOST }}"
+
+  deploy-production:
+    name: Deploy (Production)
+    needs: build-production
+    runs-on: self-hosted
+    environment: production
+    concurrency: production
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala dependências do script de deploy
+        run: apk add --no-cache bash curl python3 || apt-get install -y bash curl python3 || true
+
+      - name: Deploy via Portainer API
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          WEB_IMAGE_TAG: ${{ env.WEB_IMAGE_TAG }}
+          PORTAINER_URL: ${{ vars.PORTAINER_URL }}
+          PORTAINER_ACCESS_TOKEN: ${{ secrets.PORTAINER_ACCESS_TOKEN }}
+          PORTAINER_ENDPOINT_ID: ${{ vars.PORTAINER_ENDPOINT_ID }}
+          PORTAINER_STACK_ID: ${{ vars.PORTAINER_STACK_ID }}
+          PORTAINER_CACERT: ${{ vars.PORTAINER_CACERT }}
+          APP_URL_PROD: ${{ vars.APP_URL_PROD }}
+        run: bash .docker/bin/deploy.prod.sh

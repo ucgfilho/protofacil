@@ -9,3 +9,8 @@ apps/api/public/build
 .claude
 .openclaude
 .vite-port
+/docs
+.docker/nginx/certs/
+*.pem
+*.crt
+*.key
