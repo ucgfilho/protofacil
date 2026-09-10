@@ -34,7 +34,8 @@ const portSyncPlugin = (): Plugin => {
   };
 };
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/build/' : '/',
   plugins: [vue(), portSyncPlugin()],
   root: '.',
   build: {
@@ -55,4 +56,4 @@ export default defineConfig({
     port: Number(process.env.VITE_PORT) || 5173,
     strictPort: false
   }
-});
+}));

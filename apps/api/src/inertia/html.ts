@@ -87,10 +87,17 @@ export const renderHtml = async (page: unknown): Promise<string> => {
   const entry = env.isProduction ? await readManifest() : null;
   const pageJson = escapeJson(JSON.stringify(page));
   const viteUrl = getViteDevUrl();
+  const resolveAssetPath = (file: string): string => {
+    if (file.startsWith('/') || file.startsWith('http://') || file.startsWith('https://')) {
+      return file;
+    }
+    return file.startsWith('build/') ? `/${file}` : `/build/${file}`;
+  };
+
   const scripts = entry
-    ? `<script type="module" src="/build/${entry.file}"></script>`
+    ? `<script type="module" src="${resolveAssetPath(entry.file)}"></script>`
     : `<script type="module" src="${viteUrl}/resources/js/app.ts"></script>`;
-  const styles = entry?.css?.map((file) => `<link rel="stylesheet" href="/build/${file}">`).join('\n') ?? '';
+  const styles = entry?.css?.map((file) => `<link rel="stylesheet" href="${resolveAssetPath(file)}">`).join('\n') ?? '';
 
   return `<!doctype html>
 <html lang="pt-BR">
