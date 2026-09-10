@@ -10,6 +10,7 @@ export default [
       'dist/**',
       '**/dist/**',
       'node_modules/**',
+      'node_modules*/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',

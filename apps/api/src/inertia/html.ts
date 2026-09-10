@@ -6,18 +6,54 @@ import { env } from '../config/env.js';
 interface ManifestEntry {
   file: string;
   css?: string[];
+  isEntry?: boolean;
 }
 
 const escapeJson = (value: string): string => value.replace(/</g, '\\u003c');
 
+let cachedManifestEntry: ManifestEntry | null = null;
+
 const readManifest = async (): Promise<ManifestEntry | null> => {
-  try {
-    const manifestPath = join(process.cwd(), 'public/build/.vite/manifest.json');
-    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, ManifestEntry>;
-    return manifest['resources/js/app.ts'] ?? null;
-  } catch {
-    return null;
+  if (cachedManifestEntry && env.isProduction) {
+    return cachedManifestEntry;
   }
+
+  const candidatePaths = [
+    join(process.cwd(), 'public/build/.vite/manifest.json'),
+    join(process.cwd(), 'public/build/manifest.json'),
+    join(process.cwd(), 'apps/api/public/build/.vite/manifest.json'),
+    join(process.cwd(), 'apps/api/public/build/manifest.json')
+  ];
+
+  for (const manifestPath of candidatePaths) {
+    try {
+      if (existsSync(manifestPath)) {
+        const content = await readFile(manifestPath, 'utf8');
+        const manifest = JSON.parse(content) as Record<string, ManifestEntry>;
+        const entry =
+          manifest['resources/js/app.ts'] ??
+          manifest['apps/web/resources/js/app.ts'] ??
+          Object.values(manifest).find((item) => item.isEntry);
+        if (entry) {
+          if (env.isProduction) {
+            cachedManifestEntry = entry;
+          }
+          return entry;
+        }
+      }
+    } catch {
+      // continua buscando nos demais caminhos
+    }
+  }
+
+  if (env.isProduction) {
+    console.error(
+      '[Inertia] AVISO: manifest.json do Vite não foi localizado nos caminhos:',
+      candidatePaths
+    );
+  }
+
+  return null;
 };
 
 export const getViteDevUrl = (): string => {

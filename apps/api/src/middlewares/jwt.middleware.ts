@@ -18,7 +18,7 @@ export const requireJwtAuth = (request: Request, response: Response, next: NextF
       email: payload.email
     };
     next();
-  } catch (error) {
+  } catch {
     response.status(401).json({ message: 'Token JWT expirado ou inválido.' });
   }
 };

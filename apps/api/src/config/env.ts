@@ -23,16 +23,16 @@ const jwtSecret = optional('JWT_SECRET', sessionSecret);
 
 export const env = {
   isProduction,
-  appUrl: optional('APP_URL', 'http://localhost:3000'),
+  appUrl: optional('APP_URL', 'http://localhost:3000').replace(/\/+$/, ''),
   port: Number(process.env.PORT ?? optional('API_PORT', '3000')),
-  viteUrl: optional('VITE_URL', process.env.VITE_PORT ? `http://localhost:${process.env.VITE_PORT}` : 'http://localhost:5173'),
+  viteUrl: optional('VITE_URL', process.env.VITE_PORT ? `http://localhost:${process.env.VITE_PORT}` : 'http://localhost:5173').replace(/\/+$/, ''),
   sessionSecret,
   jwtSecret,
   database: {
     host: optional('DB_HOST', 'localhost'),
     port: Number(optional('DB_PORT', '3306')),
-    user: optional('DB_USER', 'protofacil'),
+    user: optional('DB_USER', optional('DB_USERNAME', 'protofacil')),
     password: optional('DB_PASSWORD', 'protofacil'),
-    database: optional('DB_NAME', 'protofacil')
+    database: optional('DB_NAME', optional('DB_DATABASE', 'protofacil'))
   }
 };

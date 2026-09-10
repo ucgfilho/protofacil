@@ -23,10 +23,10 @@ RUN npm prune --omit=dev
 FROM base AS prod
 
 ENV NODE_ENV=production
-
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/public ./apps/api/public
+COPY --from=builder /app/apps/api/public ./public
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/editor/dist ./packages/editor/dist
 COPY --from=builder /app/packages/ui/dist ./packages/ui/dist

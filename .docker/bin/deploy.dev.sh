@@ -145,7 +145,7 @@ HEALTHY=false
 echo "Waiting for application health: ${APP_HEALTH_URL}/health"
 
 while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
-  if curl -fsSL --max-time 5 "${APP_HEALTH_URL}/health" > /dev/null 2>&1; then
+  if curl -fsSLk --max-time 5 "${APP_HEALTH_URL}/health" > /dev/null 2>&1; then
     HEALTHY=true
     break
   fi

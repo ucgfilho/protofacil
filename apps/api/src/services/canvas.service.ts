@@ -64,7 +64,7 @@ export class CanvasService {
     return canvas;
   }
 
-  async saveCanvas(projectId: string, userId: string, elementsJson: any) {
+  async saveCanvas(projectId: string, userId: string, elementsJson: unknown) {
     const project = await this.projects.findByOwner(projectId, userId);
     if (!project) {
       throw new Error('Projeto não encontrado ou sem permissão.');
