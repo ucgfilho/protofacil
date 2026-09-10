@@ -44,6 +44,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Login no registry
+        if: ${{ vars.HARBOR_HOST != '' && secrets.HARBOR_USER != '' }}
         run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login -u "${{ secrets.HARBOR_USER }}" --password-stdin "${{ vars.HARBOR_HOST }}"
 
       - name: Build imagem app
@@ -53,6 +54,7 @@ jobs:
         run: docker build -f .docker/nginx/Dockerfile -t "${{ env.WEB_IMAGE_TAG }}" .
 
       - name: Push imagens
+        if: ${{ vars.HARBOR_HOST != '' && secrets.HARBOR_USER != '' }}
         run: |
           docker push "${{ env.IMAGE_TAG }}"
           docker push "${{ env.WEB_IMAGE_TAG }}"

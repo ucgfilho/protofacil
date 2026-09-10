@@ -1,6 +1,9 @@
 services:
   web:
-    image: ${WEB_IMAGE}
+    image: ${WEB_IMAGE:-protofacil-web:staging}
+    build:
+      context: .
+      dockerfile: .docker/nginx/Dockerfile
     container_name: protofacil_web_staging
     restart: unless-stopped
     depends_on:
@@ -10,7 +13,10 @@ services:
       - internal
 
   app:
-    image: ${APP_IMAGE}
+    image: ${APP_IMAGE:-protofacil-app:staging}
+    build:
+      context: .
+      target: prod
     container_name: protofacil_app_staging
     restart: unless-stopped
     env_file:
@@ -26,7 +32,8 @@ services:
       DB_PASSWORD: "${DB_PASSWORD}"
       SESSION_SECRET: "${SESSION_SECRET}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     expose:
       - "3000"
     networks:
@@ -43,6 +50,11 @@ services:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
     volumes:
       - protofacil_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME:-protofacil}", "--password=${DB_PASSWORD:-protofacil}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - internal
 

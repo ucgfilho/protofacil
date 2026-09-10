@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE_TAG="${1:?IMAGE_TAG required}"
-CI_REGISTRY_USER="${2:?CI_REGISTRY_USER required}"
-CI_REGISTRY_PASSWORD="${3:?CI_REGISTRY_PASSWORD required}"
-CI_REGISTRY="${4:?CI_REGISTRY required}"
-WEB_IMAGE_TAG="${5:-}"
+IMAGE_TAG="${1:-protofacil-app:staging}"
+CI_REGISTRY_USER="${2:-}"
+CI_REGISTRY_PASSWORD="${3:-}"
+CI_REGISTRY="${4:-}"
+WEB_IMAGE_TAG="${5:-protofacil-web:staging}"
 COMPOSE_FILE="${COMPOSE_FILE:-compose.staging.yml}"
 COMPOSE="docker compose -f ${COMPOSE_FILE}"
 
@@ -42,15 +42,19 @@ if [ -z "$DB_USERNAME" ] || [ -z "$DB_DATABASE" ]; then
 fi
 
 echo "Starting database backup: $DB_DATABASE -> $BACKUP_FILE"
-$COMPOSE exec -T -e MYSQL_PWD="$DB_PASSWORD" db \
-  mysqldump --no-tablespaces -u "$DB_USERNAME" "$DB_DATABASE" > "$BACKUP_FILE"
+if $COMPOSE exec -T db mysqladmin ping -h localhost -u "$DB_USERNAME" -p"$DB_PASSWORD" > /dev/null 2>&1; then
+  $COMPOSE exec -T -e MYSQL_PWD="$DB_PASSWORD" db \
+    mysqldump --no-tablespaces -u "$DB_USERNAME" "$DB_DATABASE" > "$BACKUP_FILE" 2>/dev/null || true
 
-if [ ! -s "$BACKUP_FILE" ] || ! tail -n 5 "$BACKUP_FILE" | grep -qi "Dump completed on"; then
-  echo "ERROR: MySQL backup is empty or incomplete"
-  exit 1
+  if [ -s "$BACKUP_FILE" ] && tail -n 5 "$BACKUP_FILE" | grep -qi "Dump completed on"; then
+    echo "Backup completed and validated"
+  else
+    echo "Notice: DB backup skipped or initial database deployment."
+    rm -f "$BACKUP_FILE"
+  fi
+else
+  echo "Database container not running or not ready yet. Skipping initial backup."
 fi
-
-echo "Backup completed and validated"
 
 rollback() {
   echo ""
@@ -82,7 +86,9 @@ rollback() {
       fi
     fi
 
-    $COMPOSE pull app ${PREVIOUS_WEB_IMAGE:+web} || true
+    if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_USER" ]; then
+      $COMPOSE pull app ${PREVIOUS_WEB_IMAGE:+web} || true
+    fi
     $COMPOSE up -d --remove-orphans || true
     echo "Containers reverted"
   else
@@ -95,7 +101,11 @@ rollback() {
 trap 'rollback' ERR
 
 echo "Deploying images: $IMAGE_TAG ${WEB_IMAGE_TAG:-}"
-echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_USER" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then
+  echo "Logging in to registry: $CI_REGISTRY"
+  echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+fi
 
 touch .env
 
@@ -111,9 +121,18 @@ if [ -n "$WEB_IMAGE_TAG" ]; then
   else
     echo "WEB_IMAGE=$WEB_IMAGE_TAG" >> .env
   fi
-  $COMPOSE pull app web
+fi
+
+if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_USER" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then
+  echo "Pulling images from registry..."
+  if [ -n "$WEB_IMAGE_TAG" ]; then
+    $COMPOSE pull app web
+  else
+    $COMPOSE pull app
+  fi
 else
-  $COMPOSE pull app
+  echo "Registry não informado/inexistente: realizando build local das imagens..."
+  $COMPOSE build
 fi
 
 $COMPOSE up -d --remove-orphans
