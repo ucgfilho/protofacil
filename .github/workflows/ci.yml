@@ -104,7 +104,8 @@ jobs:
             "${{ env.IMAGE_TAG }}" \
             "${{ secrets.HARBOR_USER }}" \
             "${{ secrets.HARBOR_PASSWORD }}" \
-            "${{ vars.HARBOR_HOST }}"
+            "${{ vars.HARBOR_HOST }}" \
+            "${{ env.WEB_IMAGE_TAG }}"
 
   deploy-production:
     name: Deploy (Production)

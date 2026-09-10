@@ -9,6 +9,7 @@ echo "Starting deploy via Portainer API"
 : "${PORTAINER_STACK_ID:?PORTAINER_STACK_ID is required}"
 : "${PORTAINER_CACERT:?PORTAINER_CACERT is required}"
 : "${IMAGE_TAG:?IMAGE_TAG is required}"
+: "${WEB_IMAGE_TAG:?WEB_IMAGE_TAG is required}"
 : "${APP_URL_PROD:?APP_URL_PROD is required}"
 
 COMPOSE_FILE="compose.prod.yml"
@@ -43,7 +44,14 @@ with open('$STACK_FILE') as f:
 print(next((v['value'] for v in env if v['name'] == 'APP_IMAGE'), ''))
 ")
 
-echo "Previous image: APP=${PREVIOUS_APP_IMAGE:-n/a}"
+PREVIOUS_WEB_IMAGE=$(python3 -c "
+import json
+with open('$STACK_FILE') as f:
+    env = json.load(f).get('Env') or []
+print(next((v['value'] for v in env if v['name'] == 'WEB_IMAGE'), ''))
+")
+
+echo "Previous images: APP=${PREVIOUS_APP_IMAGE:-n/a} | WEB=${PREVIOUS_WEB_IMAGE:-n/a}"
 
 rollback() {
   echo ""
@@ -51,7 +59,7 @@ rollback() {
   trap - ERR
 
   if [ -n "$PREVIOUS_APP_IMAGE" ]; then
-    echo "Reverting to previous image: APP=$PREVIOUS_APP_IMAGE"
+    echo "Reverting to previous images: APP=$PREVIOUS_APP_IMAGE WEB=${PREVIOUS_WEB_IMAGE:-n/a}"
 
     ROLLBACK_PAYLOAD="$TMP_DIR/rollback_payload.json"
     ROLLBACK_RESPONSE="$TMP_DIR/rollback_response.json"
@@ -62,8 +70,10 @@ import sys, json
 with open('$STACK_FILE') as f:
     env_vars = json.load(f).get('Env') or []
 
-env_vars = [v for v in env_vars if v.get('name') != 'APP_IMAGE']
+env_vars = [v for v in env_vars if v.get('name') not in ['APP_IMAGE', 'WEB_IMAGE']]
 env_vars.append({'name': 'APP_IMAGE', 'value': '$PREVIOUS_APP_IMAGE'})
+if '$PREVIOUS_WEB_IMAGE':
+    env_vars.append({'name': 'WEB_IMAGE', 'value': '$PREVIOUS_WEB_IMAGE'})
 
 json.dump({
     'stackFileContent': sys.stdin.read(),
@@ -104,8 +114,9 @@ try:
 except Exception:
     env_vars = []
 
-env_vars = [v for v in env_vars if v.get('name') != 'APP_IMAGE']
+env_vars = [v for v in env_vars if v.get('name') not in ['APP_IMAGE', 'WEB_IMAGE']]
 env_vars.append({'name': 'APP_IMAGE', 'value': os.environ['IMAGE_TAG']})
+env_vars.append({'name': 'WEB_IMAGE', 'value': os.environ['WEB_IMAGE_TAG']})
 
 json.dump({
     'stackFileContent': sys.stdin.read(),

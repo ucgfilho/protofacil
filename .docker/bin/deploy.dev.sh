@@ -5,6 +5,7 @@ IMAGE_TAG="${1:?IMAGE_TAG required}"
 CI_REGISTRY_USER="${2:?CI_REGISTRY_USER required}"
 CI_REGISTRY_PASSWORD="${3:?CI_REGISTRY_PASSWORD required}"
 CI_REGISTRY="${4:?CI_REGISTRY required}"
+WEB_IMAGE_TAG="${5:-}"
 COMPOSE_FILE="${COMPOSE_FILE:-compose.staging.yml}"
 COMPOSE="docker compose -f ${COMPOSE_FILE}"
 
@@ -27,6 +28,7 @@ DB_USERNAME="$(read_env DB_USERNAME)"
 DB_PASSWORD="$(read_env DB_PASSWORD)"
 DB_DATABASE="$(read_env DB_DATABASE)"
 PREVIOUS_IMAGE="$(read_env APP_IMAGE)"
+PREVIOUS_WEB_IMAGE="$(read_env WEB_IMAGE)"
 BACKUP_FILE="/tmp/db_backup_$(date +%Y%m%d_%H%M%S)_${DB_DATABASE}.sql"
 
 cleanup() {
@@ -65,17 +67,26 @@ rollback() {
   fi
 
   if [ -n "$PREVIOUS_IMAGE" ]; then
-    echo "Reverting container to previous image: $PREVIOUS_IMAGE"
+    echo "Reverting containers to previous images: $PREVIOUS_IMAGE ${PREVIOUS_WEB_IMAGE:-}"
     if grep -q '^APP_IMAGE=' .env; then
       sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$PREVIOUS_IMAGE|" .env
     else
       echo "APP_IMAGE=$PREVIOUS_IMAGE" >> .env
     fi
-    $COMPOSE pull app || true
+
+    if [ -n "$PREVIOUS_WEB_IMAGE" ]; then
+      if grep -q '^WEB_IMAGE=' .env; then
+        sed -i "s|^WEB_IMAGE=.*|WEB_IMAGE=$PREVIOUS_WEB_IMAGE|" .env
+      else
+        echo "WEB_IMAGE=$PREVIOUS_WEB_IMAGE" >> .env
+      fi
+    fi
+
+    $COMPOSE pull app ${PREVIOUS_WEB_IMAGE:+web} || true
     $COMPOSE up -d --remove-orphans || true
-    echo "Container reverted"
+    echo "Containers reverted"
   else
-    echo "No previous image registered. Container remains in failed state."
+    echo "No previous image registered. Containers remain in failed state."
   fi
 
   exit 1
@@ -83,7 +94,7 @@ rollback() {
 
 trap 'rollback' ERR
 
-echo "Deploying image: $IMAGE_TAG"
+echo "Deploying images: $IMAGE_TAG ${WEB_IMAGE_TAG:-}"
 echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
 
 touch .env
@@ -94,7 +105,17 @@ else
   echo "APP_IMAGE=$IMAGE_TAG" >> .env
 fi
 
-$COMPOSE pull app
+if [ -n "$WEB_IMAGE_TAG" ]; then
+  if grep -q '^WEB_IMAGE=' .env; then
+    sed -i "s|^WEB_IMAGE=.*|WEB_IMAGE=$WEB_IMAGE_TAG|" .env
+  else
+    echo "WEB_IMAGE=$WEB_IMAGE_TAG" >> .env
+  fi
+  $COMPOSE pull app web
+else
+  $COMPOSE pull app
+fi
+
 $COMPOSE up -d --remove-orphans
 
 APP_HEALTH_URL="$(read_env APP_URL http://localhost)"
