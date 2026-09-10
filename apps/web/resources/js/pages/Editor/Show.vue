@@ -708,12 +708,12 @@ const updateSelectedBorderColor = (value: string): void => {
       <div class="grid h-full min-h-0 w-full gap-4 xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-0">
         <div class="flex flex-col items-stretch justify-between gap-4 px-4 sm:flex-row sm:items-start sm:px-6 sm:pb-4">
           <div class="grid gap-1">
-            <p class="text-lg font-bold text-blue-900">
+            <p class="text-lg font-extrabold text-[#2F80FF]">
               {{ projectName }}
               <span v-if="isSaving" class="text-slate-500 ml-4 font-normal text-sm">Salvando...</span>
               <span v-else-if="lastSaved" class="text-green-600 ml-4 font-normal text-sm">Salvo</span>
             </p>
-            <h1 class="text-3xl font-black text-slate-950 sm:text-4xl">Editor de protótipo</h1>
+            <h1 class="text-3xl font-extrabold text-[#052B6C] sm:text-4xl">Editor de protótipo</h1>
           </div>
           <a
             class="inline-flex min-h-12 items-center gap-3 rounded-xl border-2 border-blue-800 bg-white px-5 py-3 text-lg font-bold text-blue-900 underline"
@@ -730,8 +730,8 @@ const updateSelectedBorderColor = (value: string): void => {
             class="grid min-h-0 min-w-0 content-start gap-4 rounded-2xl border-2 border-slate-300 bg-white p-4 xl:overflow-y-auto"
             aria-label="Ferramentas"
           >
-            <h2 class="text-2xl font-black text-slate-950">Ferramentas</h2>
-            <div class="grid gap-2" role="group" aria-label="Escolha uma ferramenta">
+            <h2 class="text-2xl font-extrabold text-[#052B6C]">Ferramentas</h2>
+            <div class="grid gap-3" role="group" aria-label="Escolha uma ferramenta">
               <BaseButton
                 v-for="tool in toolOptions"
                 :key="tool.value"
@@ -944,7 +944,7 @@ const updateSelectedBorderColor = (value: string): void => {
             class="grid min-h-0 min-w-0 content-start gap-4 overflow-y-auto rounded-2xl border-2 border-slate-400 bg-white p-4 shadow-sm ring-1 ring-slate-100"
             aria-label="Propriedades"
           >
-            <h2 class="text-2xl font-black text-slate-950">Propriedades</h2>
+            <h2 class="text-2xl font-extrabold text-[#052B6C]">Propriedades</h2>
 
             <div v-if="selectedElement" class="grid min-w-0 gap-4" data-testid="properties-panel">
               <BaseInput
@@ -957,12 +957,12 @@ const updateSelectedBorderColor = (value: string): void => {
                 testid="selected-label-input"
               />
 
-              <div class="grid gap-2">
-                <p class="inline-flex items-center gap-2 text-lg font-bold">
+              <div class="grid gap-3">
+                <p class="inline-flex items-center gap-3 text-lg font-bold">
                   <BaseIcon name="palette" />
                   <span>Cor</span>
                 </p>
-                <label class="grid gap-2 text-base font-bold text-slate-800">
+                <label class="grid gap-3 text-lg font-bold text-slate-800">
                   <input
                     :value="selectedElement.fill"
                     type="color"
@@ -971,12 +971,12 @@ const updateSelectedBorderColor = (value: string): void => {
                     @input="updateSelectedFill(($event.target as HTMLInputElement).value)"
                   />
                 </label>
-                <div class="flex flex-wrap gap-2" role="group" aria-label="Escolher cor rápida">
+                <div class="flex flex-wrap gap-3" role="group" aria-label="Escolher cor rápida">
                   <button
                     v-for="color in extendedColorOptions"
                     :key="color"
                     type="button"
-                    class="h-12 w-12 rounded-xl border-2 border-slate-700 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
+                    class="h-12 w-12 rounded-xl border-2 border-slate-700 transition-transform hover:scale-110 hover:border-slate-900 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
                     :style="{ backgroundColor: color }"
                     :aria-label="`Aplicar cor ${color}`"
                     :data-testid="`color-${color}`"
@@ -990,7 +990,7 @@ const updateSelectedBorderColor = (value: string): void => {
                 class="grid gap-3 rounded-2xl border-2 border-slate-300 p-3"
                 data-testid="border-properties"
               >
-                <legend class="px-2 text-lg font-black text-slate-950">Borda</legend>
+                <legend class="px-2 text-lg font-extrabold text-[#052B6C]">Borda</legend>
                 <p class="text-base font-bold text-slate-700" role="status">
                   {{ selectedElement.borderEnabled ? 'Borda adicionada' : 'Sem borda' }}
                 </p>
@@ -1016,7 +1016,7 @@ const updateSelectedBorderColor = (value: string): void => {
                   Adicionar borda
                 </BaseButton>
 
-                <label class="grid gap-2 text-base font-bold text-slate-800">
+                <label class="grid gap-3 text-lg font-bold text-slate-800">
                   Cor da borda
                   <input
                     :value="selectedElement.stroke"
@@ -1075,16 +1075,16 @@ const updateSelectedBorderColor = (value: string): void => {
       >
         <header class="flex items-start justify-between gap-4">
           <div>
-            <h2 id="image-dialog-title" class="text-2xl font-black text-slate-950 sm:text-3xl">
+            <h2 id="image-dialog-title" class="text-2xl font-extrabold text-[#052B6C] sm:text-3xl">
               Pesquisar imagem no Pinterest
             </h2>
-            <p id="image-dialog-help" class="mt-2 text-lg text-slate-700">
+            <p id="image-dialog-help" class="mt-2 text-lg font-medium text-[#7A8CA5]">
               Digite o que procura e toque em uma imagem para adicioná-la à tela do celular.
             </p>
           </div>
           <button
             type="button"
-            class="inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl border-2 border-slate-700 bg-white"
+            class="inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl border-2 border-slate-700 bg-white transition-colors hover:bg-slate-100 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
             aria-label="Fechar pesquisa de imagens"
             data-testid="close-image-search"
             @click="closeImageDialog"
@@ -1094,13 +1094,13 @@ const updateSelectedBorderColor = (value: string): void => {
         </header>
 
         <form class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]" @submit.prevent="searchPinterestImages">
-          <label class="grid gap-2 text-lg font-bold text-slate-900">
+          <label class="grid gap-3 text-lg font-bold text-slate-950">
             O que você quer encontrar?
             <input
               ref="imageSearchInputRef"
               v-model="imageQuery"
               type="search"
-              class="min-h-14 rounded-xl border-2 border-slate-700 px-4 text-lg"
+              class="w-full box-border min-h-12 rounded-xl border-2 border-slate-700 bg-white px-4 py-3 text-lg text-slate-950 outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
               placeholder="Exemplo: flores coloridas"
               autocomplete="off"
               data-testid="image-search-input"
@@ -1136,13 +1136,13 @@ const updateSelectedBorderColor = (value: string): void => {
             v-for="image in imageResults"
             :key="image.id"
             type="button"
-            class="group grid min-h-44 overflow-hidden rounded-2xl border-2 border-slate-500 bg-slate-100 text-left focus-visible:border-blue-800"
+            class="group grid min-h-44 overflow-hidden rounded-2xl border-2 border-slate-500 bg-slate-100 text-left transition-colors hover:border-blue-800 hover:bg-slate-200 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
             :aria-label="`Adicionar ${image.title}`"
             :data-testid="`pinterest-image-${image.id}`"
             @click="addPinterestImage(image)"
           >
-            <img :src="image.imageUrl" :alt="image.title" class="h-40 w-full object-cover sm:h-48" loading="lazy" />
-            <span class="bg-white p-3 text-base font-bold text-slate-900">Adicionar esta imagem</span>
+            <img :src="image.imageUrl" :alt="image.title" class="h-40 w-full object-cover transition-opacity group-hover:opacity-90 sm:h-48" loading="lazy" />
+            <span class="bg-white p-3 text-base font-bold text-slate-900 transition-colors group-hover:bg-blue-50 group-hover:text-blue-900">Adicionar esta imagem</span>
           </button>
         </div>
       </section>

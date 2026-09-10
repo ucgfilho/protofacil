@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { BaseIcon, BaseToast } from '@protofacil/ui';
 import type { AuthenticatedUser, UserPreferences } from '@protofacil/shared';
+import logoUrl from '../../assets/logo.png';
 
 const props = defineProps<{
   user: AuthenticatedUser | null;
@@ -21,17 +22,25 @@ const contrast = computed(() => props.preferences?.contrastMode ?? 'default');
   <div :data-font-scale="fontScale" :data-contrast="contrast" class="min-h-screen bg-slate-50 text-slate-950">
     <header class="border-b-4 border-blue-800 bg-white px-4 py-3 sm:px-6 sm:py-4">
       <div class="mx-auto flex max-w-6xl flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        <a href="/projetos" class="inline-flex items-center gap-2 text-2xl font-black text-blue-900" data-testid="home-link">
-          <BaseIcon name="home" size="lg" />
-          <span>ProtoFácil</span>
+        <a
+          href="/projetos"
+          class="inline-flex min-h-12 items-center rounded-xl px-2 py-1 transition-colors hover:bg-slate-100 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
+          data-testid="home-link"
+          aria-label="Página inicial do ProtoFácil"
+        >
+          <img
+            :src="logoUrl"
+            alt="ProtoFácil"
+            class="h-8 w-auto object-contain sm:h-10"
+          />
         </a>
         <nav aria-label="Navegação principal" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-          <a class="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 py-3 font-bold underline focus-visible:outline-blue-700" href="/projetos">
+          <a class="inline-flex min-h-12 items-center gap-3 rounded-xl px-5 py-3 font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700" href="/projetos">
             <BaseIcon name="folder" />
             <span>Projetos</span>
           </a>
           <form v-if="user" method="post" action="/logout">
-            <button class="inline-flex min-h-12 items-center gap-2 rounded-lg px-4 py-3 font-bold underline" type="submit" data-testid="logout-button">
+            <button class="inline-flex min-h-12 items-center gap-3 rounded-xl px-5 py-3 font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700" type="submit" data-testid="logout-button">
               <BaseIcon name="logout" />
               <span>Sair</span>
             </button>

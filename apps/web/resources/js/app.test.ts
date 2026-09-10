@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 describe('frontend acessível', () => {
   it('mantém textos de ações principais visíveis', () => {
-    const actions = ['Abrir', 'Renomear', 'Duplicar', 'Excluir'];
+    const actions = ['Abrir', 'Renomear', 'Excluir'];
     expect(actions.every((action) => action.length > 0)).toBe(true);
   });
 
@@ -63,5 +63,23 @@ describe('frontend acessível', () => {
 
     expect(layoutSource).not.toContain('/perfil/acessibilidade');
     expect(existsSync(preferencesPage)).toBe(false);
+  });
+
+  it('não exibe o botão de duplicar projeto', () => {
+    const projectCardSource = readFileSync(
+      new URL('./components/projects/ProjectCard.vue', import.meta.url),
+      'utf8'
+    );
+
+    expect(projectCardSource).not.toContain('testid="duplicate-project"');
+    expect(projectCardSource).not.toContain('>Duplicar<');
+  });
+
+  it('exibe a logo no header com texto alternativo acessível e sem ícone de casa', () => {
+    const layoutSource = readFileSync(new URL('./layouts/AppLayout.vue', import.meta.url), 'utf8');
+
+    expect(layoutSource).toContain('logo.png');
+    expect(layoutSource).toContain('alt="ProtoFácil"');
+    expect(layoutSource).not.toContain('name="home"');
   });
 });

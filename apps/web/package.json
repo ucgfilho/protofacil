@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.3.0",
     "@inertiajs/vue3": "^2.0.0",
     "@protofacil/shared": "0.1.0",
     "@protofacil/ui": "0.1.0",

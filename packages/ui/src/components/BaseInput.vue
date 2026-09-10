@@ -30,7 +30,7 @@ const errorId = `${props.id}-error`;
 
 <template>
   <div class="grid gap-2">
-    <label :for="id" class="inline-flex items-center gap-2 text-lg font-bold text-slate-950">
+    <label :for="id" class="inline-flex items-center gap-2 text-lg font-bold text-[#052B6C]">
       <BaseIcon v-if="icon" :name="icon" size="md" />
       <span>{{ label }}</span>
     </label>

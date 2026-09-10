@@ -41,11 +41,11 @@ const cancelRename = (): void => {
     data-testid="project-card"
   >
     <div class="grid gap-1">
-      <h2 class="text-2xl font-black text-slate-950">{{ project.name }}</h2>
-      <p class="text-base text-slate-700">
+      <h2 class="text-2xl font-extrabold text-[#052B6C]">{{ project.name }}</h2>
+      <p class="text-base font-medium text-[#7A8CA5]">
         {{ project.description || 'Sem descrição.' }}
       </p>
-      <p class="text-base text-slate-700">Atualizado em {{ formattedUpdatedAt }}</p>
+      <p class="text-base font-medium text-[#7A8CA5]">Atualizado em {{ formattedUpdatedAt }}</p>
     </div>
 
     <form
@@ -72,7 +72,7 @@ const cancelRename = (): void => {
 
     <div class="flex flex-wrap gap-3" aria-label="Ações do projeto">
       <a
-        class="inline-flex min-h-12 items-center gap-3 rounded-xl bg-blue-800 px-5 py-3 text-lg font-bold text-white underline"
+        class="inline-flex min-h-12 items-center gap-3 rounded-xl bg-blue-800 px-5 py-3 text-lg font-bold text-white underline transition-colors hover:bg-blue-900 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
         :href="`/projetos/${project.id}`"
         data-testid="open-project"
       >
@@ -80,7 +80,6 @@ const cancelRename = (): void => {
         <span>Abrir</span>
       </a>
       <BaseButton variant="secondary" icon="edit" testid="rename-project" :disabled="isRenaming" @click="openRename">Renomear</BaseButton>
-      <BaseButton variant="secondary" icon="copy" testid="duplicate-project">Duplicar</BaseButton>
       <form method="post" :action="`/projetos/${project.id}?_method=DELETE`">
         <BaseButton type="submit" variant="danger" icon="trash" testid="delete-project">Excluir</BaseButton>
       </form>

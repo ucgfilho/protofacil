@@ -19,14 +19,14 @@ defineProps<{
   <AppLayout :user="user" :preferences="preferences" :flash="flash">
     <section class="grid gap-6">
       <div class="grid gap-2">
-        <h1 class="text-4xl font-black text-slate-950">Meus projetos</h1>
-        <p class="text-xl text-slate-800">Crie, abra e organize seus protótipos acessíveis.</p>
+        <h1 class="text-4xl font-extrabold text-[#052B6C]">Meus projetos</h1>
+        <p class="text-xl font-medium text-[#7A8CA5]">Crie, abra e organize seus protótipos acessíveis.</p>
       </div>
 
       <ProjectCreateModal />
 
       <section class="grid gap-4" aria-labelledby="project-list-title">
-        <h2 id="project-list-title" class="text-2xl font-black">Lista de projetos</h2>
+        <h2 id="project-list-title" class="text-2xl font-extrabold text-[#052B6C]">Lista de projetos</h2>
         <div v-if="projects.length === 0" class="rounded-2xl border-2 border-dashed border-slate-400 bg-white p-6">
           <p class="text-xl font-bold">Você ainda não tem projetos.</p>
           <p class="mt-2 text-lg">Use o formulário acima para criar seu primeiro protótipo.</p>

@@ -54,6 +54,7 @@ export default defineConfig(({ command }) => ({
   },
   server: {
     port: Number(process.env.VITE_PORT) || 5173,
-    strictPort: false
+    strictPort: false,
+    origin: process.env.VITE_URL || `http://localhost:${Number(process.env.VITE_PORT) || 5173}`
   }
 }));

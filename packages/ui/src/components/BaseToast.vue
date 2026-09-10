@@ -79,7 +79,7 @@ onBeforeUnmount(clearCloseTimer);
     <span class="min-w-0 flex-1">{{ message }}</span>
     <button
       type="button"
-      class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
+      class="inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl transition-colors hover:bg-black/10 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
       aria-label="Fechar aviso"
       @click="closeToast"
     >

@@ -5,8 +5,8 @@ import { BaseButton, BaseInput } from '@protofacil/ui';
 <template>
   <section class="grid gap-4 rounded-2xl border-2 border-blue-200 bg-blue-50 p-5" aria-labelledby="create-project-title">
     <div class="grid gap-1">
-      <h2 id="create-project-title" class="text-2xl font-black text-blue-950">Criar novo projeto</h2>
-      <p class="text-lg text-blue-950">Dê um nome simples para começar seu protótipo.</p>
+      <h2 id="create-project-title" class="text-2xl font-extrabold text-[#052B6C]">Criar novo projeto</h2>
+      <p class="text-lg font-medium text-[#7A8CA5]">Dê um nome simples para começar seu protótipo.</p>
     </div>
     <form method="post" action="/projetos" class="grid gap-4" data-testid="create-project-form">
       <BaseInput id="project-name" name="name" label="Nome do projeto" icon="folder" model-value="" />

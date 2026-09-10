@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -44,7 +46,36 @@ export const createApp = (): express.Express => {
     })
   );
 
-  app.use('/build', express.static('public/build'));
+  const buildCandidates = [
+    resolve(process.cwd(), 'public/build'),
+    resolve(process.cwd(), 'apps/api/public/build')
+  ];
+  for (const dir of buildCandidates) {
+    if (existsSync(dir)) {
+      app.use('/build', express.static(dir));
+    }
+  }
+
+  const resourcesCandidates = [
+    resolve(process.cwd(), 'resources'),
+    resolve(process.cwd(), 'apps/web/resources'),
+    resolve(process.cwd(), '../web/resources')
+  ];
+  for (const dir of resourcesCandidates) {
+    if (existsSync(dir)) {
+      app.use('/resources', express.static(dir));
+    }
+  }
+
+  const publicCandidates = [
+    resolve(process.cwd(), 'public'),
+    resolve(process.cwd(), 'apps/api/public')
+  ];
+  for (const dir of publicCandidates) {
+    if (existsSync(dir)) {
+      app.use(express.static(dir));
+    }
+  }
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   app.use(methodOverride);
