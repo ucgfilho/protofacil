@@ -20,28 +20,30 @@ const contrast = computed(() => props.preferences?.contrastMode ?? 'default');
 
 <template>
   <div :data-font-scale="fontScale" :data-contrast="contrast" class="min-h-screen bg-slate-50 text-slate-950">
-    <header class="border-b-4 border-blue-800 bg-white px-4 py-3 sm:px-6 sm:py-4">
-      <div class="mx-auto flex max-w-6xl flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+    <header class="border-b-2 border-blue-800 bg-white px-3 py-1.5 sm:border-b-4 sm:px-6 sm:py-4">
+      <div class="mx-auto flex max-w-6xl flex-col items-stretch justify-between gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <a
           href="/projetos"
-          class="inline-flex min-h-12 items-center rounded-xl px-2 py-1 transition-colors hover:bg-slate-100 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700"
+          class="inline-flex min-h-8 items-center justify-center self-center rounded-lg px-2 py-0.5 transition-colors hover:bg-slate-100 outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700 sm:min-h-12 sm:self-auto sm:rounded-xl sm:py-1"
           data-testid="home-link"
           aria-label="Página inicial do ProtoFácil"
         >
           <img
             :src="logoUrl"
             alt="ProtoFácil"
-            class="h-8 w-auto object-contain sm:h-10"
+            class="h-6 w-auto object-contain sm:h-10"
           />
         </a>
-        <nav aria-label="Navegação principal" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-          <a class="inline-flex min-h-12 items-center gap-3 rounded-xl px-5 py-3 font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700" href="/projetos">
-            <BaseIcon name="folder" />
+        <nav aria-label="Navegação principal" class="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-3">
+          <a class="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700 sm:min-h-12 sm:gap-3 sm:rounded-xl sm:px-5 sm:py-3 sm:text-base" href="/projetos">
+            <BaseIcon name="folder" size="sm" class="sm:hidden" />
+            <BaseIcon name="folder" class="hidden sm:inline-block" />
             <span>Projetos</span>
           </a>
           <form v-if="user" method="post" action="/logout">
-            <button class="inline-flex min-h-12 items-center gap-3 rounded-xl px-5 py-3 font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700" type="submit" data-testid="logout-button">
-              <BaseIcon name="logout" />
+            <button class="inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs font-extrabold text-[#052B6C] underline transition-colors hover:bg-slate-100 hover:text-[#2F80FF] outline-offset-4 focus-visible:outline focus-visible:outline-3 focus-visible:outline-blue-700 sm:min-h-12 sm:gap-3 sm:rounded-xl sm:px-5 sm:py-3 sm:text-base" type="submit" data-testid="logout-button">
+              <BaseIcon name="logout" size="sm" class="sm:hidden" />
+              <BaseIcon name="logout" class="hidden sm:inline-block" />
               <span>Sair</span>
             </button>
           </form>
@@ -52,7 +54,7 @@ const contrast = computed(() => props.preferences?.contrastMode ?? 'default');
     <main
       id="conteudo"
       class="mx-auto grid w-full"
-      :class="wide ? 'max-w-none gap-0 px-0 py-4' : 'max-w-6xl gap-6 px-4 py-6 sm:px-6 sm:py-8'"
+      :class="wide ? 'max-w-none gap-0 px-0 py-0 sm:py-4' : 'max-w-6xl gap-6 px-4 py-6 sm:px-6 sm:py-8'"
       tabindex="-1"
     >
       <BaseToast v-if="flash.success" :message="flash.success" tone="success" />
